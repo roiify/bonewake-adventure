@@ -1,0 +1,111 @@
+{
+  "style_suffix": ". gritty mature dark fantasy gory survival horror, character stays in place no walking, tight in-place strike inside silhouette, east-facing.",
+  "direction": "east",
+  "heroes": [
+    {
+      "slug": "kengo",
+      "id": "ea0c4ac4-c185-4ae1-aea6-3d3fac565d08",
+      "account": "kidbot",
+      "attack": "pit-fighter brawler throws a hard right cross punch, weight shift forward, no walking, stays in place, fist extends right",
+      "submitted": true
+    },
+    {
+      "slug": "elara",
+      "id": "63a50166-763b-47f9-bb9c-11cc2e6dfe24",
+      "account": "kidbot",
+      "attack": "plague archer draws bow and looses an arrow right, no walking, stays in place, arrow flies east",
+      "submitted": true
+    },
+    {
+      "slug": "len",
+      "id": "7208edff-f9ac-438c-b3a6-b5d18e20991d",
+      "account": "kidbot",
+      "attack": "veteran assassin lunges a quick dagger stab, no walking, stays in place, blade darts forward right",
+      "submitted": true
+    },
+    {
+      "slug": "luna",
+      "id": "9b5bf8d8-2097-43ab-ab68-965ba829e52a",
+      "account": "kidbot",
+      "attack": "bloodmage slashes own palm with ritual dagger and flings arc of crimson blood, no walking, stays in place, blood spray right",
+      "submitted": true
+    },
+    {
+      "slug": "aelia",
+      "id": "e8115aad-e7fc-4a49-9cf4-131cbc17fba1",
+      "account": "kidbot",
+      "attack": "frost witch raises both palms and fires a frozen ice shard, no walking, stays in place, ice projectile launches right",
+      "submitted": true
+    },
+    {
+      "slug": "kaius",
+      "id": "2539a806-a405-434a-a74d-218946b40464",
+      "account": "kidbot",
+      "attack": "fallen paladin swings long sword in a horizontal slash, no walking, stays in place, blade arcs right",
+      "submitted": true
+    },
+    {
+      "slug": "pyra",
+      "id": "9d59c8ca-7843-4cc4-a84d-0a262872f755",
+      "account": "kidbot",
+      "attack": "pyromancer hurls a fireball with outstretched right hand, no walking, stays in place, flame projectile launches right",
+      "submitted": true
+    },
+    {
+      "slug": "korvan",
+      "id": "af036437-8a38-4365-a5c3-c36e47352c93",
+      "account": "kidbot",
+      "attack": "soul reaper swings massive scythe in a downward right arc, no walking, stays in place, scythe blade slices east",
+      "submitted": true
+    },
+    {
+      "slug": "george",
+      "id": "a64d9505-8a0d-4dfd-a025-bc8de01ec918",
+      "account": "kidbot",
+      "attack": "wild shaman swings a heavy bone club in a wide right swing, no walking, stays in place, club arcs east",
+      "submitted": true
+    },
+    {
+      "slug": "manny",
+      "id": "7e554818-48ac-4bda-b454-a4259f1e575d",
+      "account": "kidbot",
+      "attack": "death caller raises right hand and discharges a bolt of black necrotic energy, no walking, stays in place, dark beam fires right",
+      "submitted": true
+    },
+    {
+      "slug": "chino",
+      "id": "833690a7-f6ff-4578-98e3-a473e471f9c3",
+      "account": "kidbot",
+      "attack": "martial artist throws a fast palm strike with right hand, weight forward, no walking, stays in place, palm thrusts east",
+      "submitted": true
+    },
+    {
+      "slug": "reiji",
+      "id": "6642caa0-109c-4bfe-ab44-f5c851d32759",
+      "account": "kidbot",
+      "attack": "samurai performs lightning iaido draw cut, blade unsheathes and slashes right, no walking, stays in place",
+      "submitted": true
+    },
+    {
+      "slug": "twins",
+      "id": "b0037663-4f31-494a-b178-14a9c90fd3fa",
+      "account": "kidbot",
+      "attack": "twin warriors execute synchronized dual-blade cross slash, no walking, stays in place, both blades sweep right",
+      "submitted": true
+    },
+    {
+      "slug": "bone_king",
+      "id": "5a48a190-3354-44b2-b0a1-354adc19f203",
+      "account": "rolfi",
+      "attack": "bone king smashes a heavy bone scepter downward right, no walking, stays in place, scepter strikes east",
+      "submitted": true
+    },
+    {
+      "slug": "lich_sovereign",
+      "id": "5e4bc6e2-fc54-4c94-ad46-89b3634844bc",
+      "account": "rolfi",
+      "attack": "lich sovereign raises staff and unleashes a beam of death magic right, no walking, stays in place, dark beam fires east",
+      "submitted": true
+    }
+  ]
+}

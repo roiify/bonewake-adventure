@@ -1,0 +1,31 @@
+# gitleaks config — runs on every commit via .githooks/pre-commit.
+# Extends gitleaks' default ruleset with PixelLab-style UUID API key
+# detection. The default ruleset already catches prefixed keys
+# (sk-, ghp_, eyJ...) but misses raw UUIDs, which is exactly the
+# pattern that slipped past us before.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "uuid-bearer-token"
+description = "UUID used as a Bearer token (PixelLab-style API key)"
+regex = '''(?i)(?:bearer|api[-_]?key|api[-_]?token|access[-_]?token|auth(?:orization)?)\s*[=:]\s*"?(?:bearer\s+)?[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}"?'''
+keywords = ["bearer", "api_key", "api-key", "apikey", "access_token", "auth"]
+
+[[rules]]
+id = "literal-bearer-uuid"
+description = "Bearer keyword followed by UUID anywhere in source"
+regex = '''Bearer\s+[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}'''
+keywords = ["Bearer"]
+
+# Allowlist: docs/comments referencing the example UUID format don't trip the
+# scanner. Add commit hashes here if a finding is a genuine false positive.
+[allowlist]
+description = "Allow-listed paths and content"
+paths = [
+  '''node_modules/.*''',
+  '''dist/.*''',
+  '''\.lock$''',
+  '''package-lock\.json$''',
+]

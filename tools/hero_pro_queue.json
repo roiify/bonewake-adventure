@@ -1,0 +1,66 @@
+{
+  "_note": "Pro-mode HERO upgrade queue. Same specs as the 28 enemy Pro upgrades (pro mode, humanoid body_type, size 124, side view). submitted/pending semantics match pro_enemy_queue.json.",
+  "submitted": [
+    {
+      "slug": "luna",
+      "char_id": "a4c2ccf6-bd66-4335-bd86-5bd755c3ecad"
+    },
+    {
+      "slug": "elara",
+      "char_id": "dc10a72c-d5fb-4a38-ade4-78cb781ff42c"
+    },
+    {
+      "slug": "aelia",
+      "char_id": "d9f0dccb-7c41-4f8d-92ae-4cb1537a62d0"
+    },
+    {
+      "slug": "kengo",
+      "char_id": "1600500b-7b7b-49da-9387-28e47bff166c"
+    },
+    {
+      "slug": "len",
+      "char_id": "a8787594-6ac6-4053-af6c-0286cd5a5875"
+    },
+    {
+      "slug": "kaius",
+      "char_id": "af7ad3de-61a0-4d72-b961-f72a02774075"
+    },
+    {
+      "slug": "pyra",
+      "char_id": "263da13e-c81f-497c-a417-7fa4cb7cd7be"
+    },
+    {
+      "slug": "korvan",
+      "char_id": "fd69aee9-b4a7-49af-9f7b-20148cf81027"
+    },
+    {
+      "slug": "george",
+      "char_id": "6e484330-cc11-4b77-bf0b-681975345f02"
+    },
+    {
+      "slug": "manny",
+      "char_id": "9dec9d69-2420-4012-b5fe-a3c77cef4df7"
+    },
+    {
+      "slug": "chino",
+      "char_id": "5da4f428-72f9-4b1b-a458-45e771fd6176"
+    },
+    {
+      "slug": "reiji",
+      "char_id": "85dfaf08-fada-42a8-86bf-1fb717035bd3"
+    },
+    {
+      "slug": "twins",
+      "char_id": "c308e090-8558-474d-8b95-e9e6e1aeadd6"
+    },
+    {
+      "slug": "bone_king",
+      "char_id": "22b0ba4a-87fd-46e8-9e57-08c6b9d05087"
+    },
+    {
+      "slug": "lich_sovereign",
+      "char_id": "ae8b0a46-41ab-4802-a5ce-572355f62d18"
+    }
+  ],
+  "pending": []
+}

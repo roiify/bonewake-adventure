@@ -1,0 +1,314 @@
+{
+  "_note": "Slug \u2192 kidbot character UUID + tight in-place attack prompt. Used by animate_enemy_attacks.py to submit 44 v3 west 16-frame attacks.",
+  "style_suffix": ", in the same painterly dark-fantasy pixel art style as the V1 BoneWake roster",
+  "enemies": [
+    {
+      "slug": "shambler",
+      "id": "ea2c5eeb-6b73-4112-aadd-b1e922e6dfe9",
+      "attack": "throws a single straight punch forward with one rotted fist at chest height, fist returns to neutral resting position next to body \u2014 tight in-place punch, no arm raising overhead, no forward step, stays inside character silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "fastghoul",
+      "id": "68459df5-5599-4d1a-a683-849b408aae23",
+      "attack": "makes one quick double-claw scratch forward, both clawed hands jab ahead at chest height then return to neutral hunched pose \u2014 tight in-place strike, stays inside silhouette, no forward step, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "boneknight",
+      "id": "3c2d9497-78c5-4a55-8405-be1c0549f55f",
+      "attack": "thrusts rusted longsword straight forward in a fast piercing stab at chest height, blade returns to neutral ready guard \u2014 tight in-place stab, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "graveyardlich",
+      "id": "73af3ad7-6f57-420a-8c89-459a034ba4fb",
+      "attack": "jabs one bony hand forward palm-out at chest height, a small green necrotic spark erupts at the palm, hand returns to neutral \u2014 tight in-place cast, no overhead arm raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "worldboss_1",
+      "id": "1106ec5d-1814-43da-b1f9-76b232b2e73d",
+      "attack": "slashes ritual dagger forward in a tight short horizontal cut at chest height, dagger returns to neutral \u2014 no wide arc, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "undead_archer",
+      "id": "168fcf3f-a7d9-4b65-8c1b-56c4778e85ad",
+      "attack": "pulls nocked arrow back to cheek and looses it forward in a single quick draw-and-release motion, returns to neutral bow-ready pose \u2014 tight in-place archery, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "plague_caster",
+      "id": "c4e90c3f-de53-4c4f-a76b-ed7f4b6526e3",
+      "attack": "jabs both hands forward palms-out at chest height, a small green plague burst erupts at the palms, hands return to neutral \u2014 tight in-place cast, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "fallen_captain",
+      "id": "ec5864e3-2447-47d3-b839-90c8142754c3",
+      "attack": "thrusts broken longsword straight forward in a single piercing stab at chest height, blade returns to neutral guard \u2014 tight in-place stab, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "skeletal_warhorse",
+      "id": "4f391cf0-adc3-4d38-809f-a156d94eab17",
+      "attack": "lunges head forward in a single biting snap with skeletal jaws, head returns to neutral \u2014 tight in-place bite, no forward step, body stays in place, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "carrion_spider",
+      "id": "f22ed5c7-b419-4601-8261-bb5e123625d4",
+      "attack": "snaps fanged mandibles forward in a single quick bite lunge, body stays in place, returns to neutral hunched pose \u2014 tight in-place bite, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "phantom_knight",
+      "id": "2d3d88bb-e9fc-4e69-a429-327f027ee2f1",
+      "attack": "thrusts spectral longsword straight forward in a single tight piercing stab at chest height, blade returns to neutral ready guard \u2014 no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "wailing_wraith",
+      "id": "bf32509a-952c-4f18-b9b2-2b984c19a1b8",
+      "attack": "snaps head forward and exhales a small forward-sweeping ghostly wail wisp at chest height, head returns to neutral floating pose \u2014 tight in-place wail, body stays in place, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "zombie_knight",
+      "id": "3a512e35-1d97-460e-821c-d2b443817b77",
+      "attack": "chops chipped rusted sword down in a short tight downward slash close to body, blade returns to neutral guard \u2014 no wide arc, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "zombie_berserker",
+      "id": "b46e65e9-b865-4d0a-acdf-b3cfa4edbf8e",
+      "attack": "jabs both rusted cleavers forward in a single quick double-thrust at chest height, cleavers return to neutral raised guard \u2014 tight in-place double stab, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "shield_bearer",
+      "id": "9e832fc7-a137-4eae-a20f-2ed927ec269b",
+      "attack": "slams iron tower-shield forward in a single tight ramming bash at chest height, shield returns to neutral defensive position \u2014 no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "zombie_mage",
+      "id": "419000c3-50e5-4bc6-ae1e-56270094c011",
+      "attack": "jabs one withered hand forward at chest height, a small black necrotic orb erupts at the fingertips, hand returns to neutral \u2014 tight in-place cast, no overhead arm raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "grave_channeler",
+      "id": "382afee9-41cb-4fd3-aac3-ab0b937154d0",
+      "attack": "punches the ground beside him with one fist, a small spray of bone shards bursts up at the impact point, fist returns to neutral crouched position \u2014 tight in-place ground strike, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "soul_leech",
+      "id": "0bdcea59-9c60-40cc-bc74-80c1b74161d8",
+      "attack": "extends one translucent tendril hand forward in a single quick whip-flick at chest height, tendril retracts back to body \u2014 tight in-place tendril lash, body stays in place, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "rotwolf",
+      "id": "c65dcbd5-bfa4-4dcc-818c-860d58d62df6",
+      "attack": "lunges head forward and snaps jaws shut in a single tight bite at chest height, head returns to neutral \u2014 body stays in place, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "bone_bear",
+      "id": "36ddd4da-5d81-46f2-afd2-d429b4186cf8",
+      "attack": "jabs one massive bony paw forward in a single tight swipe at chest height, paw returns to neutral raised position \u2014 no wide arc, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "possessed_corpse",
+      "id": "d43bf0f8-4c36-42f4-8ef1-31d32fdfbb1f",
+      "attack": "jabs one elongated shadow-claw hand forward in a single tight stab at chest height, hand returns to neutral hunched position \u2014 no wide swipe, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "grave_digger",
+      "id": "fe606d37-ab9e-4db5-a1d9-b118b48b1a41",
+      "attack": "thrusts rusted iron shovel straight forward in a single piercing thrust at chest height, shovel returns to neutral guard \u2014 tight in-place stab, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "plague_monk",
+      "id": "f6ef0664-949f-4fd0-bb39-01b2b748a19b",
+      "attack": "thrusts chain censer forward in a single tight piercing thrust at chest height, censer returns to neutral guard \u2014 no wide arc on the chain, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "necromancer",
+      "id": "dccf13ff-e21b-4c62-a616-80999fc762d5",
+      "attack": "jabs bone-tipped staff forward at chest height, a small bolt of purple necrotic energy fires from the tip, staff returns to neutral \u2014 tight in-place cast, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "royal_lich",
+      "id": "f2bac325-6ad9-472a-a49c-0224a9af0748",
+      "attack": "jabs golden bone scepter forward at chest height, a small purple necrotic flame erupts at the tip, scepter returns to neutral \u2014 tight in-place cast, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "bone_executioner",
+      "id": "a47ff9d5-0098-4589-accf-55c2fc874c82",
+      "attack": "chops two-handed bone axe straight down in a short tight overhead-to-chest strike close to body, axe returns to neutral shoulder-rest position \u2014 no wide swing, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "gilded_revenant",
+      "id": "cebba8de-02ba-469d-a6af-ceddd8a83605",
+      "attack": "thrusts jeweled longsword straight forward in a single piercing stab at chest height, blade returns to neutral guard with shield raised \u2014 tight in-place stab, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "crypt_assassin",
+      "id": "a3d0fb94-f30a-483c-bca5-cabe563377f3",
+      "attack": "stabs one reverse-grip bone dagger straight forward in a single quick low jab at chest height, dagger returns to neutral crouched stance \u2014 tight in-place stab, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "plague_priest",
+      "id": "e506c0b9-6bf4-4d0d-9c16-df5535613313",
+      "attack": "thrusts chain censer forward in a single tight piercing thrust at chest height, censer returns to neutral guard \u2014 no wide arc, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "void_zombie",
+      "id": "e46885d3-152c-48a5-8b8e-1064f4c2b617",
+      "attack": "jabs both hands forward at chest height, small black shadow-tendril bursts erupt at the fingertips, hands return to neutral \u2014 tight in-place cast, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "abyssal_warden",
+      "id": "33a24b71-fd8b-4e02-8961-0c489d91164b",
+      "attack": "thrusts spiked chain mace straight forward in a single tight piercing thrust at chest height, mace returns to neutral guard with chains held in \u2014 no wide arc, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "shade_caller",
+      "id": "d78acfcc-ccb6-4a0b-9df0-099eea35c63d",
+      "attack": "jabs both hands forward at chest height, small shadow wisps erupt at the fingertips, hands return to neutral hunched pose \u2014 tight in-place cast, no overhead arm raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "dread_knight",
+      "id": "dc92742f-14d2-49f7-a3a6-d241e52fe00b",
+      "attack": "thrusts serrated greatsword straight forward in a single tight piercing stab at chest height, blade returns to neutral ready guard \u2014 tight in-place stab, no overhead raise, no wide arc, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "corpse_hound",
+      "id": "ce9b1362-432d-4fbc-b79f-5de9d166a7a7",
+      "attack": "lunges head forward and snaps jaws shut in a single tight bite at chest height, head returns to neutral hunched stance \u2014 body stays in place, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "starfall_lich",
+      "id": "1c56de77-b6c1-4bb8-94a7-f073204b39a5",
+      "attack": "jabs bone staff forward at chest height, a small cyan star spark erupts at the tip, staff returns to neutral \u2014 tight in-place cast, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "void_juggernaut",
+      "id": "f4af768b-4ad7-479a-928c-47e0fcf73fc1",
+      "attack": "throws one massive gauntleted fist forward in a single tight straight punch at chest height, fist returns to neutral raised guard \u2014 no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "astral_archer",
+      "id": "44add916-4796-4a57-97d4-023f5a063120",
+      "attack": "pulls nocked crystalline starlight arrow back to cheek and looses it forward in a single quick draw-and-release motion, returns to neutral bow-ready pose \u2014 tight in-place archery, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "orb_caster",
+      "id": "1899647f-b542-4a6c-bfc1-04bc92a66277",
+      "attack": "jabs one hand forward at chest height, one of the four floating cyan orbs darts forward then snaps back to orbit, hand returns to neutral \u2014 tight in-place orb-throw, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "soul_devourer",
+      "id": "fb78c3ff-77a1-4b39-9c1a-d19d30b6d3ef",
+      "attack": "extends one elongated tendril hand forward in a single quick whip-flick at chest height to leech soul-energy, tendril retracts back to body \u2014 body stays in place, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "apocalypse_horror",
+      "id": "5b65a765-9a7e-449b-9411-c22be2a780af",
+      "attack": "jabs one grafted fist forward in a single heavy straight punch at chest height, fist returns to neutral hulking pose \u2014 tight in-place punch, no overhead raise, no wide swing, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "world_eater_husk",
+      "id": "b75a9276-02cf-4ab5-829f-9959bebedc81",
+      "attack": "jabs one massive bony fist forward in a single heavy straight punch at chest height, fist returns to neutral hunched pose \u2014 tight in-place punch, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "blood_titan",
+      "id": "ec64ac95-1b3d-4da5-89c7-36a2ce2abd7a",
+      "attack": "throws one massive blood-soaked fist forward in a single heavy straight punch at chest height, fist returns to neutral raised guard \u2014 tight in-place punch, no overhead raise, no wide swing, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "ash_lord",
+      "id": "8a89bb50-e1ef-45ee-bbc8-05b61290731e",
+      "attack": "thrusts flaming bone sword straight forward in a single tight piercing stab at chest height, blade returns to neutral guard with embers trailing \u2014 tight in-place stab, no wide arc, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    },
+    {
+      "slug": "final_revenant",
+      "id": "0ae7bca5-52d2-4d8e-a05b-606049958688",
+      "attack": "thrusts one curved void-blade forward in a single tight piercing stab at chest height, blade returns to neutral dual-blade guard \u2014 no spin, no wide arc, no overhead raise, no forward step, stays inside silhouette, seamless loop",
+      "submitted": true,
+      "hit_submitted": true
+    }
+  ]
+}

@@ -1,0 +1,220 @@
+{
+ "submitted": [
+  {
+   "slug": "abyssal_warden",
+   "char_id": "e0263e4d-ed10-44e8-b302-35f3c638c714"
+  },
+  {
+   "slug": "acid_vomiter",
+   "char_id": "970166fc-ce34-4448-8308-d5a12c82ff30"
+  },
+  {
+   "slug": "apocalypse_horror",
+   "char_id": "463e84ae-e717-447a-84a2-8733f2b59c5d"
+  },
+  {
+   "slug": "ash_lord",
+   "char_id": "50f3676f-5856-4f9a-97e9-e8cee181e1c1"
+  },
+  {
+   "slug": "astral_archer",
+   "char_id": "34173359-8f42-4c58-a75a-3230e9da00d3"
+  },
+  {
+   "slug": "bloated_glutton",
+   "char_id": "6d9e9cfd-f7a3-4e6e-b2c1-e5b961248a44"
+  },
+  {
+   "slug": "blood_titan",
+   "char_id": "0744e6f1-26eb-4a16-8504-46ab12224ba6"
+  },
+  {
+   "slug": "bone_bear",
+   "char_id": "ff9d2261-6c75-4cdb-89d2-f50e63df9be0"
+  },
+  {
+   "slug": "bone_executioner",
+   "char_id": "8cebaa8e-75f5-41c6-90a1-64da34fbc578"
+  },
+  {
+   "slug": "boneknight",
+   "char_id": "06bca917-b5d0-49a4-83f1-6fa9e11edf4e"
+  },
+  {
+   "slug": "butcher_zombie",
+   "char_id": "91ce2faf-541e-48a8-a30c-0530980fc574"
+  },
+  {
+   "slug": "carrion_spider",
+   "char_id": "3d17977b-d620-4517-978c-34ba389c6993"
+  },
+  {
+   "slug": "chained_prisoner",
+   "char_id": "af51135d-b697-44b7-a01a-519e2ef92a55"
+  },
+  {
+   "slug": "conjoined_horror",
+   "char_id": "1fb46b1b-8043-4865-9c8f-cd4d5f2dbf91"
+  },
+  {
+   "slug": "corpse_hound",
+   "char_id": "93cee6fa-1386-4686-bfd3-0b493ac7997f"
+  },
+  {
+   "slug": "crawling_torso",
+   "char_id": "b8739097-3d0b-4bc1-ae7e-d6ff2c75616d"
+  },
+  {
+   "slug": "crypt_assassin",
+   "char_id": "106706d3-8094-4631-ab08-fda5b420d9dd"
+  },
+  {
+   "slug": "dread_knight",
+   "char_id": "6a3c070f-aa86-49b2-a0b1-5b26852fafa0"
+  },
+  {
+   "slug": "drowned_lurker",
+   "char_id": "7fb4bf13-f3c7-48c3-9181-cf7eb2be340b"
+  },
+  {
+   "slug": "fallen_captain",
+   "char_id": "ed13f5f3-007e-4665-91cc-69936a5d104f"
+  },
+  {
+   "slug": "fastghoul",
+   "char_id": "72ba71fa-19f4-4545-8f38-b1b21da6c9db"
+  },
+  {
+   "slug": "final_revenant",
+   "char_id": "09a777d2-ea9d-46a1-b7e5-1df428a964a4"
+  },
+  {
+   "slug": "gilded_revenant",
+   "char_id": "2faa4c76-31f3-4336-a49d-e442dfe9ef9c"
+  },
+  {
+   "slug": "grave_channeler",
+   "char_id": "2961b5c1-4b77-4b2d-9c33-84771177b5bc"
+  },
+  {
+   "slug": "grave_digger",
+   "char_id": "0b4ebc18-9d6e-451e-9e91-e1f4c94e7f32"
+  },
+  {
+   "slug": "graveyardlich",
+   "char_id": "c80f87e0-8806-48fc-a1df-bc2aec79117a"
+  },
+  {
+   "slug": "hangman",
+   "char_id": "fbed1118-1126-4178-aa08-b3acac813887"
+  },
+  {
+   "slug": "maggot_host",
+   "char_id": "aab7df0b-a5ab-4c7c-ac52-29fc848ac2f9"
+  },
+  {
+   "slug": "necromancer",
+   "char_id": "2dc26aba-92eb-4bfd-a80f-5f053ec1ed1b"
+  },
+  {
+   "slug": "orb_caster",
+   "char_id": "13709ba1-32bd-416f-b721-1e64316e430b"
+  },
+  {
+   "slug": "phantom_knight",
+   "char_id": "87aefd23-8665-4434-8e84-dc7cdae0c579"
+  },
+  {
+   "slug": "plague_bride",
+   "char_id": "6cf30f5d-aca9-4184-b7c9-71a4c4d5be62"
+  },
+  {
+   "slug": "plague_caster",
+   "char_id": "ea6048de-a38b-45e1-a672-772f7e78369f"
+  },
+  {
+   "slug": "plague_monk",
+   "char_id": "19b6ed8a-1aa5-40ac-ad39-f0b558017878"
+  },
+  {
+   "slug": "plague_priest",
+   "char_id": "36560454-8899-4fef-8ba0-605ff69e9c16"
+  },
+  {
+   "slug": "possessed_corpse",
+   "char_id": "4a3ebf83-d548-41b7-8d89-7419892d33ca"
+  },
+  {
+   "slug": "rotwolf",
+   "char_id": "87c493ca-335d-4aef-aea1-98758b5e1a3b"
+  },
+  {
+   "slug": "royal_lich",
+   "char_id": "6dfd5c12-b897-48e5-9c50-1ed3cb76cea5"
+  },
+  {
+   "slug": "shade_caller",
+   "char_id": "9fae9fe0-f08d-42e6-b7a7-b83d56e81cac"
+  },
+  {
+   "slug": "shambler",
+   "char_id": "e41015af-b2bb-4041-8e33-94a93a6c6fdd"
+  },
+  {
+   "slug": "shield_bearer",
+   "char_id": "9724a8cb-02c8-4125-8f89-e666ea7f9080"
+  },
+  {
+   "slug": "skeletal_warhorse",
+   "char_id": "74134eb9-7d6d-47a2-9190-ad4d426077a8"
+  },
+  {
+   "slug": "soul_devourer",
+   "char_id": "43f743ef-ed6c-489e-b94b-2a1ca83eee4a"
+  },
+  {
+   "slug": "soul_leech",
+   "char_id": "922b7562-163d-4f31-80c4-cc3236a3ed87"
+  },
+  {
+   "slug": "starfall_lich",
+   "char_id": "25321a1a-b47f-4318-b50f-5f64e1bab165"
+  },
+  {
+   "slug": "stitched_brute",
+   "char_id": "e93d67e0-227d-4197-af13-b97dd41dcfc7"
+  },
+  {
+   "slug": "undead_archer",
+   "char_id": "0190a6a7-4a66-4720-897d-e428dccb47d5"
+  },
+  {
+   "slug": "void_juggernaut",
+   "char_id": "e20cdba9-91dc-403f-9003-1e6408fcb453"
+  },
+  {
+   "slug": "void_zombie",
+   "char_id": "64c06aa7-eb62-4c91-a3fa-b36215e972d3"
+  },
+  {
+   "slug": "wailing_wraith",
+   "char_id": "8e41006f-393a-4ebb-b756-678c35f12643"
+  },
+  {
+   "slug": "world_eater_husk",
+   "char_id": "3fb1afc9-3101-455d-9302-c629908aee76"
+  },
+  {
+   "slug": "zombie_berserker",
+   "char_id": "0ae6d4bd-364f-4d9e-b63e-4b8156d5d69b"
+  },
+  {
+   "slug": "zombie_knight",
+   "char_id": "84971cca-4f7a-4797-b891-6806e18a7f8d"
+  },
+  {
+   "slug": "zombie_mage",
+   "char_id": "6872577f-5b17-4558-b1e5-21ae8627ef66"
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+  "submitted": [
+    {
+      "slug": "bloated_glutton",
+      "char_id": "6d9e9cfd-f7a3-4e6e-b2c1-e5b961248a44"
+    },
+    {
+      "slug": "hangman",
+      "char_id": "fbed1118-1126-4178-aa08-b3acac813887"
+    },
+    {
+      "slug": "conjoined_horror",
+      "char_id": "1fb46b1b-8043-4865-9c8f-cd4d5f2dbf91"
+    },
+    {
+      "slug": "stitched_brute",
+      "char_id": "e93d67e0-227d-4197-af13-b97dd41dcfc7"
+    },
+    {
+      "slug": "drowned_lurker",
+      "char_id": "7fb4bf13-f3c7-48c3-9181-cf7eb2be340b"
+    },
+    {
+      "slug": "acid_vomiter",
+      "char_id": "970166fc-ce34-4448-8308-d5a12c82ff30"
+    },
+    {
+      "slug": "plague_bride",
+      "char_id": "6cf30f5d-aca9-4184-b7c9-71a4c4d5be62"
+    },
+    {
+      "slug": "chained_prisoner",
+      "char_id": "af51135d-b697-44b7-a01a-519e2ef92a55"
+    },
+    {
+      "slug": "crawling_torso",
+      "char_id": "b8739097-3d0b-4bc1-ae7e-d6ff2c75616d"
+    },
+    {
+      "slug": "maggot_host",
+      "char_id": "aab7df0b-a5ab-4c7c-ac52-29fc848ac2f9"
+    },
+    {
+      "slug": "butcher_zombie",
+      "char_id": "91ce2faf-541e-48a8-a30c-0530980fc574"
+    }
+  ],
+  "pending": []
+}

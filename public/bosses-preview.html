@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BoneWake — Boss Gallery</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+    background: radial-gradient(circle at top, #1f0e0e 0%, #0a0606 60%, #000 100%);
+    color: #e7e5e4;
+    min-height: 100vh;
+  }
+  header { text-align: center; margin-bottom: 28px; }
+  h1 { margin: 0; color: #fda4af; text-shadow: 0 2px 8px rgba(0,0,0,.7); font-size: 28px; }
+  .sub { color: #a1a1aa; font-size: 12px; margin-top: 4px; }
+  .hint { color: #fbbf24; font-size: 11px; margin-top: 8px; opacity: 0.8; }
+  .section-title {
+    font-size: 14px; color: #fbbf24;
+    margin: 28px 0 12px; padding-bottom: 6px;
+    border-bottom: 1px solid #3f3f46; letter-spacing: 2px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: linear-gradient(180deg, #1c1917, #0c0a09);
+    border: 2px solid #57534e;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: #fda4af;
+    box-shadow: 0 0 24px rgba(253, 164, 175, 0.35);
+  }
+  /* Sprite viewport — uses ONLY the 9-frame pixel-art _attack atlas so
+     the visual style is consistent across idle + hover. Default shows
+     just the first frame (background-position: 0 center). On hover, a
+     steps(9) animation cycles through all 9 frames. The viewport hides
+     anything past one frame's width via overflow.
+     The atlas is 9 frames wide at 170px each = 1530px total. We size
+     the background to be 9x the viewport width and animate background
+     position across that span. */
+  .viewport {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #1c1917;
+    /* Checkerboard backdrop so transparent pixels read */
+    background-image: repeating-conic-gradient(#1c1917 0% 25%, #2a2522 0% 50%);
+    background-size: 16px 16px;
+    position: relative;
+  }
+  .viewport .sprite {
+    position: absolute;
+    inset: 0;
+    background-image: var(--attack);
+    background-repeat: no-repeat;
+    /* Atlas is 9 frames wide — make background 900% of viewport width so
+       each frame fills the viewport exactly when offset by 100% increments. */
+    background-size: 900% 100%;
+    background-position: 0% center;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    transition: filter 0.15s ease;
+  }
+  .card:hover .viewport .sprite {
+    animation: bossAttackPlay var(--anim-dur, 0.9s) steps(9) infinite;
+    filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.55));
+  }
+  @keyframes bossAttackPlay {
+    from { background-position: 0% center; }
+    to   { background-position: 100% center; }
+  }
+  .name { margin-top: 8px; color: #fde68a; font-size: 13px; font-weight: 600; }
+  .slot { color: #71717a; font-size: 10px; margin-top: 2px; }
+  .speed-bar {
+    display: flex; gap: 8px; justify-content: center;
+    margin: 16px 0 4px;
+  }
+  .speed-bar button {
+    background: #1c1917; color: #fde68a; border: 1px solid #57534e;
+    padding: 6px 12px; font: inherit; font-size: 11px;
+    border-radius: 6px; cursor: pointer;
+  }
+  .speed-bar button.active { background: #7c2d12; border-color: #fda4af; color: #fff; }
+  .placeholder {
+    aspect-ratio: 1/1;
+    display: flex; align-items: center; justify-content: center;
+    color: #44403c; font-size: 11px;
+    border: 1px dashed #44403c; border-radius: 6px; background: #0a0606;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>💀 BoneWake — Boss Gallery</h1>
+  <div class="sub">14 boss-tier sprites · World Boss + Shatter daily rotation</div>
+  <div class="hint">Hover any boss to play its attack animation</div>
+  <div class="speed-bar" id="speed">
+    <button data-dur="1.4s">slow</button>
+    <button data-dur="0.9s" class="active">normal</button>
+    <button data-dur="0.5s">fast</button>
+  </div>
+</header>
+
+<div class="section-title">MYTHICAL CREATURES (7)</div>
+<div class="grid" id="creatures"></div>
+
+<div class="section-title">HUMANOID OVERLORDS (7)</div>
+<div class="grid" id="humanoids"></div>
+
+<script>
+const BASE = location.pathname.startsWith('/bonewake/') ? '/bonewake' : '';
+const V = Date.now(); // cache-bust
+
+const CREATURES = [
+  ['bonewake_dragon',  'Bonewake Dragon',  'Mon · World Boss'],
+  ['plague_hydra',     'Plague Hydra',     'Tue · World Boss'],
+  ['rot_phoenix',      'Rot Phoenix',      'Wed · World Boss'],
+  ['bone_cerberus',    'Bone Cerberus',    'Thu · World Boss'],
+  ['wraith_kraken',    'Wraith Kraken',    'Fri · World Boss'],
+  ['necro_sphinx',     'Necro Sphinx',     'Sat · World Boss'],
+  ['crimson_centaur',  'Crimson Centaur',  'Sun · World Boss'],
+];
+const HUMANOIDS = [
+  ['lich_king',        'The Lich King',     'Mon · Shatter'],
+  ['bone_titan',       'Bone Titan',        'Tue · Shatter'],
+  ['plague_doctor',    'Plague Doctor',     'Wed · Shatter'],
+  ['ash_empress',      'Ash Empress',       'Thu · Shatter'],
+  ['soul_reaper',      'Soul Reaper',       'Fri · Shatter'],
+  ['voidlord',         'Voidlord',          'Sat · Shatter'],
+  ['worm_god',         'The Worm God',      'Sun · Shatter'],
+];
+
+function render(targetId, list) {
+  const t = document.getElementById(targetId);
+  for (const [slug, name, slot] of list) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const attack = `${BASE}/sprites/bosses/${slug}_attack.png?v=${V}`;
+    const vp = document.createElement('div');
+    vp.className = 'viewport';
+    const sprite = document.createElement('div');
+    sprite.className = 'sprite';
+    sprite.style.setProperty('--attack', `url("${attack}")`);
+    vp.appendChild(sprite);
+    card.appendChild(vp);
+
+    const nm = document.createElement('div');
+    nm.className = 'name';
+    nm.textContent = name;
+    card.appendChild(nm);
+    const sl = document.createElement('div');
+    sl.className = 'slot';
+    sl.textContent = slot;
+    card.appendChild(sl);
+    t.appendChild(card);
+  }
+}
+render('creatures', CREATURES);
+render('humanoids', HUMANOIDS);
+
+// Speed-bar buttons set --anim-dur on the root grid containers so all
+// hover-attack animations share a tempo.
+document.querySelectorAll('.speed-bar button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-bar button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const dur = btn.dataset.dur;
+    document.querySelectorAll('.sprite').forEach(v => {
+      v.style.setProperty('--anim-dur', dur);
+    });
+  });
+});
+</script>
+</body>
+</html>
