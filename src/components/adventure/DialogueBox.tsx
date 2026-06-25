@@ -1,14 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { DialogueLine } from '../../data/adventure/types';
 
-// Bottom-of-screen dialogue overlay: advances one line per tap/click, then
-// closes. Tone-neutral chrome; the writing carries the mood.
+// Bottom-of-screen dialogue overlay: advance with a key (E / Space / Enter / J)
+// or tap/click, then close. Tone-neutral chrome; the writing carries the mood.
 export default function DialogueBox({ lines, onClose }: { lines: DialogueLine[]; onClose: () => void }) {
   const [i, setI] = useState(0);
   const line = lines[i];
-  if (!line) { onClose(); return null; }
   const last = i >= lines.length - 1;
   const next = () => (last ? onClose() : setI(i + 1));
+
+  // Keyboard advance. Re-bound per line so `next`/`last` stay current. The
+  // engine's own key handler ignores input while paused (dialogue open), so
+  // these keys won't also attack/dodge/interact underneath.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space' || e.code === 'KeyJ') {
+        e.preventDefault();
+        e.stopPropagation();
+        next();
+      }
+    };
+    // capture phase so we advance before anything else reacts to the key
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i, lines.length]);
+
+  if (!line) { onClose(); return null; }
 
   return (
     <div className="absolute inset-0 z-20 flex items-end justify-center" onClick={next}>
@@ -16,13 +35,13 @@ export default function DialogueBox({ lines, onClose }: { lines: DialogueLine[];
         {line.who && <div className="text-red-400 text-xs font-bold tracking-wide uppercase mb-1">{line.who}</div>}
         <p className="text-zinc-100 text-sm leading-relaxed min-h-[2.5rem]">{line.text}</p>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-zinc-600 text-[10px]">{i + 1}/{lines.length}</span>
+          <span className="text-zinc-600 text-[10px]">{i + 1}/{lines.length} · <span className="text-zinc-500">E / Space</span></span>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); next(); }}
             className="px-3 py-1 rounded-lg bg-red-900/60 text-zinc-100 text-xs border border-red-800 active:bg-red-800"
           >
-            {last ? 'Close' : 'Next ▸'}
+            {last ? 'Close ⏎' : 'Next ▸'}
           </button>
         </div>
       </div>
