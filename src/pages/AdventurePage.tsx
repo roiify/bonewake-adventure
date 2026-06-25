@@ -9,7 +9,14 @@ import { useHeroes } from '../store/heroes';
 import { HERO_BY_ID } from '../data/heroes';
 import { toCombatUnit } from '../lib/stats';
 import { distributeSquadExp } from '../lib/rewards';
+import { asset } from '../lib/assetPath';
 import { uid } from '../lib/id';
+
+// Hero strength knobs (tune to taste). Player hits hit PLAYER_POWER× harder and
+// has PLAYER_HP_MULT× more HP than the raw combat-stat unit, so the action feel
+// favors the player.
+const PLAYER_POWER = 2.6;
+const PLAYER_HP_MULT = 1.6;
 
 // Heroes whose basic attack is a ranged projectile (casters/archers). Everyone
 // else swings melee. Kengo (the solo starter) is melee.
@@ -26,8 +33,28 @@ export default function AdventurePage() {
   const [hud, setHud] = useState<Hud>({ map: 'lastlight', hp: 1, maxHp: 1, enemies: 0, xp: 0 });
   const [dialogue, setDialogue] = useState<{ lines: DialogueLine[]; req: DialogueRequest } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
 
   const showToast = (m: string) => { setToast(m); window.setTimeout(() => setToast(null), 1900); };
+
+  // --- hero picker (choose which toon you control) ---
+  const partyList = () => {
+    const heroes = useHeroes.getState().heroes;
+    return useAdventure.getState().save.partyIds
+      .map((id) => { const h = heroes.find((x) => x.id === id); return h ? { id, t: h.templateId, lvl: h.level } : null; })
+      .filter((x): x is { id: string; t: string; lvl: number } => !!x);
+  };
+  const openPicker = () => { engineRef.current?.pause(); setShowPicker(true); };
+  const closePicker = () => { setShowPicker(false); engineRef.current?.resume(); };
+  const pickHero = async (id: string) => {
+    const adv = useAdventure.getState();
+    const partyIds = [id, ...adv.save.partyIds.filter((x) => x !== id)];
+    await adv.patch({ partyIds });
+    leaderRef.current = id;
+    const st = buildPlayerStats(id);
+    if (st) engineRef.current?.setPlayer(st);
+    closePicker();
+  };
 
   const buildPlayerStats = (leaderId: string): PlayerStats | null => {
     const heroes = useHeroes.getState().heroes;
@@ -36,7 +63,7 @@ export default function AdventurePage() {
     if (!owned) return null;
     const cu = toCombatUnit(owned, equipment, 'player', 'p0', [owned.templateId]);
     if (!cu) return null;
-    return { templateId: owned.templateId, maxHp: cu.maxHp, atk: cu.atk, def: cu.def, spd: cu.spd, crit: cu.crit, element: cu.element, ranged: RANGED.has(owned.templateId) };
+    return { templateId: owned.templateId, maxHp: Math.round(cu.maxHp * PLAYER_HP_MULT), atk: cu.atk, def: cu.def, spd: cu.spd, crit: cu.crit, element: cu.element, ranged: RANGED.has(owned.templateId), power: PLAYER_POWER };
   };
 
   // --- engine callbacks ---
@@ -164,8 +191,10 @@ export default function AdventurePage() {
           <div className="flex-1 h-3 rounded bg-zinc-800 overflow-hidden border border-zinc-700">
             <div className="h-full bg-gradient-to-r from-red-700 to-red-500 transition-[width] duration-150" style={{ width: `${hpFrac * 100}%` }} />
           </div>
-          <span className="font-mono text-[10px] text-zinc-400 w-[64px] text-right">{hud.hp}/{hud.maxHp}</span>
+          <span className="font-mono text-[10px] text-zinc-400 w-[58px] text-right">{hud.hp}/{hud.maxHp}</span>
         </div>
+        <button type="button" onClick={openPicker}
+          className="shrink-0 px-2 py-1 rounded-lg bg-zinc-800 text-zinc-200 text-[11px] border border-zinc-700 active:bg-zinc-700">⇄ Hero</button>
       </div>
 
       {/* canvas */}
@@ -176,6 +205,35 @@ export default function AdventurePage() {
         {toast && <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-lg bg-zinc-900/95 border border-red-900/50 text-xs text-zinc-100 shadow-lg max-w-[90%] text-center">{toast}</div>}
         <div className="absolute top-2 right-3 text-[10px] font-mono text-zinc-500">XP {hud.xp}{hud.enemies > 0 ? ` · ${hud.enemies} enemies` : ''}</div>
       </div>
+
+      {/* hero picker */}
+      {showPicker && (
+        <div className="absolute inset-0 z-40 bg-black/70 flex items-center justify-center p-4" onClick={closePicker}>
+          <div className="w-full max-w-[420px] rounded-xl border border-red-900/50 bg-zinc-950 p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm uppercase tracking-widest text-red-400/90">Choose your hero</h2>
+              <button type="button" onClick={closePicker} className="text-zinc-500 text-lg leading-none px-1">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {partyList().map((p) => {
+                const tmpl = HERO_BY_ID[p.t];
+                const active = leaderRef.current === p.id;
+                return (
+                  <button key={p.id} type="button" onClick={() => { void pickHero(p.id); }}
+                    className={`flex items-center gap-2 p-2 rounded-lg border text-left ${active ? 'border-red-500 bg-red-950/40' : 'border-zinc-700 bg-zinc-900 active:bg-zinc-800'}`}>
+                    <img src={asset(`sprites/pixellab/heroes/pro/${p.t}_south.png`)} alt="" style={{ imageRendering: 'pixelated' }} className="w-10 h-12 object-contain shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-zinc-100 text-sm truncate">{tmpl?.name ?? p.t}{active && ' ●'}</div>
+                      <div className="text-zinc-500 text-[10px] capitalize truncate">{tmpl?.archetype} · {tmpl?.element} · Lv {p.lvl}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-zinc-600 text-[10px] mt-3 text-center">Pick who you control. Recruit more heroes by talking to allies (Luna in Lastlight, Elara at the dungeon mouth).</p>
+          </div>
+        </div>
+      )}
 
       {/* controls */}
       <div className="px-4 pb-6 pt-2">

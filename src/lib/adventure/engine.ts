@@ -24,6 +24,7 @@ export interface PlayerStats {
   crit: number;
   element: Element;
   ranged: boolean;
+  power: number; // damage multiplier applied to every player hit (hero strength)
 }
 
 export interface DialogueRequest {
@@ -327,7 +328,7 @@ export class AdventureEngine {
         if (dx * dx + dy * dy > range * range) continue;
         let diff = Math.abs(Math.atan2(dy, dx) - ang);
         if (diff > Math.PI) diff = Math.PI * 2 - diff;
-        if (diff <= 1.25) this.damageEnemy(e, 1.0);
+        if (diff <= 1.25) this.damageEnemy(e, this.player.power);
       }
     }
   }
@@ -357,7 +358,7 @@ export class AdventureEngine {
     const maxHp = Math.round(u.maxHp * (opts.isBoss ? 2.2 : 0.5));
     this.enemies.push({
       id: u.id, templateId, sprite: templateId, x: wx, y: wy, hp: maxHp, maxHp,
-      atk: u.atk * (opts.isBoss ? 0.8 : 0.6), def: u.def, spd: u.spd, crit: u.crit, element: u.element,
+      atk: u.atk * (opts.isBoss ? 0.65 : 0.45), def: u.def, spd: u.spd, crit: u.crit, element: u.element,
       speed: 26 + u.spd * 0.6, atkCd: 700, flash: 0, facing: 'south',
       ranged: templateId === 'graveyardlich', isBoss: !!opts.isBoss, packId: opts.packId, setsFlag: opts.setsFlag,
     });
@@ -473,7 +474,7 @@ export class AdventureEngine {
       if (p.fromEnemy) {
         if ((p.x - this.px) ** 2 + (p.y - this.py) ** 2 < 144) { this.hurtPlayer({ dmg: p.dmg, crit: p.crit, strong: false }); p.life = 0; }
       } else {
-        for (const e of this.enemies) { if ((p.x - e.x) ** 2 + (p.y - e.y) ** 2 < 196) { this.damageEnemy(e, 1.0); p.life = 0; break; } }
+        for (const e of this.enemies) { if ((p.x - e.x) ** 2 + (p.y - e.y) ** 2 < 196) { this.damageEnemy(e, this.player.power); p.life = 0; break; } }
       }
     }
     this.projs = this.projs.filter((p) => p.life > 0);
