@@ -401,7 +401,7 @@ export class AdventureEngine {
   private worldTriggers(): void {
     const tx = Math.floor(this.px / this.tile), ty = Math.floor(this.py / this.tile);
     const warp = (this.map.warps ?? []).find((w) => w.x === tx && w.y === ty);
-    if (warp && this.enemies.length === 0) { this.cb.onAutosave(warp.toMap, warp.toX, warp.toY, warp.facing); this.setMap(warp.toMap, warp.toX, warp.toY, warp.facing); return; }
+    if (warp) { this.cb.onAutosave(warp.toMap, warp.toX, warp.toY, warp.facing); this.setMap(warp.toMap, warp.toX, warp.toY, warp.facing); return; }
     const pk = (this.map.pickups ?? []).find((p) => p.x === tx && p.y === ty && !this.flags[p.setsFlag] && (!p.requiresFlag || this.flags[p.requiresFlag]));
     if (pk) { this.pause(); this.cb.onDialogue({ dialogueId: pk.dialogueId ?? '', pickupId: pk.id, setsFlag: pk.setsFlag }); return; }
     if ((this.map.shrines ?? []).some((s) => s.x === tx && s.y === ty)) { this.hp = this.player.maxHp; this.cb.onAutosave(this.map.id, tx, ty, this.facing); this.cb.onShrine(); }
@@ -532,6 +532,7 @@ export class AdventureEngine {
         ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.fillRect(sx, sy, tile, 1); ctx.fillRect(sx, sy, 1, tile);
       }
     }
+    for (const w of this.map.warps ?? []) this.drawWarp(w.x, w.y, ADVENTURE_MAPS[w.toMap]?.name ?? '', cam);
     for (const sh of this.map.shrines ?? []) this.marker(sh.x, sh.y, cam, '#7fd0ff', '✚');
     for (const sg of this.map.signs ?? []) this.marker(sg.x, sg.y, cam, '#c8a878', '▯');
     for (const pk of this.map.pickups ?? []) if (!this.flags[pk.setsFlag] && (!pk.requiresFlag || this.flags[pk.requiresFlag])) this.marker(pk.x, pk.y, cam, '#cfe8ff', '✦');
@@ -549,6 +550,30 @@ export class AdventureEngine {
     ctx.font = 'bold 11px ui-monospace, monospace'; ctx.textAlign = 'center';
     for (const f of this.floats) { ctx.globalAlpha = clamp(f.life / 700, 0, 1); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x - cam.x, f.y - cam.y); }
     ctx.globalAlpha = 1; ctx.textAlign = 'left';
+  }
+
+  private drawWarp(tx: number, ty: number, name: string, cam: { x: number; y: number }): void {
+    const { ctx, tile } = this;
+    const dx = tx * tile - cam.x, dy = ty * tile - cam.y;
+    // stone archway
+    ctx.fillStyle = '#140d12'; ctx.fillRect(dx + 2, dy - 2, tile - 4, tile);
+    ctx.fillStyle = '#4a3f33'; ctx.fillRect(dx, dy - 5, 5, tile + 5); ctx.fillRect(dx + tile - 5, dy - 5, 5, tile + 5);
+    ctx.fillStyle = '#5d4d3a'; ctx.fillRect(dx - 1, dy - 7, tile + 2, 6);
+    // pulsing portal glow
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 320);
+    const g = ctx.createLinearGradient(dx, dy, dx, dy + tile);
+    g.addColorStop(0, '#8fdcff'); g.addColorStop(1, '#b06bff');
+    ctx.globalAlpha = 0.3 + pulse * 0.45; ctx.fillStyle = g;
+    ctx.fillRect(dx + 5, dy, tile - 10, tile - 2);
+    ctx.globalAlpha = 1;
+    // destination label
+    const short = name.length > 16 ? name.slice(0, 15) + '…' : name;
+    const txt = '→ ' + short;
+    ctx.font = '9px ui-monospace, monospace'; ctx.textAlign = 'center';
+    const w = ctx.measureText(txt).width;
+    ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(dx + tile / 2 - w / 2 - 3, dy - 20, w + 6, 12);
+    ctx.fillStyle = '#cfe8ff'; ctx.fillText(txt, dx + tile / 2, dy - 11);
+    ctx.textAlign = 'left';
   }
 
   private marker(tx: number, ty: number, cam: { x: number; y: number }, color: string, glyph: string): void {
