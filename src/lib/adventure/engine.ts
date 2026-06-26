@@ -45,6 +45,7 @@ export interface EngineCallbacks {
   onXp: (xp: number) => void;
   onDeath: () => void;
   onFlag: (flag: string, fixedId?: string) => void;
+  onLoot: (itemLevel: number, isBoss: boolean) => void;
 }
 
 export interface EngineInit {
@@ -53,6 +54,7 @@ export interface EngineInit {
   y: number;
   facing: Dir;
   player: PlayerStats;
+  allies: PlayerStats[]; // AI companions (non-leader party)
   flags: Record<string, boolean>;
   defeated: string[];
   cb: EngineCallbacks;
@@ -88,12 +90,13 @@ function dirFromAngle(ang: number): Dir {
 }
 
 interface Enemy {
-  id: string; templateId: string; sprite: string;
+  id: string; templateId: string; sprite: string; level: number;
   x: number; y: number; hp: number; maxHp: number;
   atk: number; def: number; spd: number; crit: number; element: Element;
   speed: number; atkCd: number; flash: number; facing: Dir;
   ranged: boolean; isBoss: boolean; packId?: string; setsFlag?: string;
 }
+interface Ally { templateId: string; x: number; y: number; atk: number; def: number; crit: number; element: Element; power: number; ranged: boolean; speed: number; atkCd: number; facing: Dir; }
 interface Projectile { x: number; y: number; vx: number; vy: number; life: number; dmg: number; crit: boolean; fromEnemy: boolean; }
 interface Float { x: number; y: number; vy: number; life: number; text: string; color: string; }
 interface Orb { x: number; y: number; vx: number; vy: number; life: number; }
@@ -135,6 +138,8 @@ export class AdventureEngine {
   private xp = 0;
 
   private enemies: Enemy[] = [];
+  private allies: Ally[] = [];
+  private allyRoster: PlayerStats[] = [];
   private projs: Projectile[] = [];
   private floats: Float[] = [];
   private orbs: Orb[] = [];
@@ -149,6 +154,7 @@ export class AdventureEngine {
     this.hp = init.player.maxHp;
     this.flags = { ...init.flags };
     this.defeated = new Set(init.defeated);
+    this.allyRoster = init.allies ?? [];
     canvas.width = VIEW_W * this.tile;
     canvas.height = VIEW_H * this.tile;
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -236,8 +242,18 @@ export class AdventureEngine {
     this.facing = facing;
     this.enemies = []; this.projs = []; this.floats = []; this.orbs = [];
     this.activatedPacks.clear(); this.spawnTimers.clear();
+    this.spawnAllies();
     this.cb.onHud({ map: m.id, hp: this.hp, maxHp: this.player.maxHp, enemies: 0, xp: this.xp });
   }
+
+  private spawnAllies(): void {
+    this.allies = this.allyRoster.map((p, i) => {
+      const a = ((i + 1) / (this.allyRoster.length + 1)) * Math.PI * 2;
+      return { templateId: p.templateId, x: this.px + Math.cos(a) * this.tile * 1.3, y: this.py + Math.sin(a) * this.tile * 1.3,
+        atk: p.atk, def: p.def, crit: p.crit, element: p.element, power: p.power, ranged: p.ranged, speed: 116, atkCd: 0, facing: 'south' };
+    });
+  }
+  setAllies(list: PlayerStats[]): void { this.allyRoster = list; this.spawnAllies(); }
 
   private solidPx(wx: number, wy: number): boolean {
     const tx = Math.floor(wx / this.tile), ty = Math.floor(wy / this.tile);
@@ -333,8 +349,8 @@ export class AdventureEngine {
     }
   }
 
-  private damageEnemy(e: Enemy, mult: number): void {
-    const h = hit({ atk: this.player.atk, crit: this.player.crit, element: this.player.element }, { def: e.def, element: e.element }, mult);
+  private damageEnemy(e: Enemy, mult: number, src: { atk: number; crit: number; element: Element } = this.player): void {
+    const h = hit({ atk: src.atk, crit: src.crit, element: src.element }, { def: e.def, element: e.element }, mult);
     e.hp -= h.dmg; e.flash = 120;
     this.floats.push({ x: e.x, y: e.y - this.tile * 0.6, vy: -28, life: 700, text: String(h.dmg), color: h.crit ? '#ffd36b' : (h.strong ? '#ff7a66' : '#fff') });
     if (e.hp <= 0) this.killEnemy(e);
@@ -344,6 +360,9 @@ export class AdventureEngine {
     const gain = Math.round(e.isBoss ? 400 : 12 + e.maxHp * 0.02);
     this.xp += gain; this.cb.onXp(gain);
     for (let i = 0, n = e.isBoss ? 8 : 2; i < n; i++) { const a = Math.random() * Math.PI * 2; this.orbs.push({ x: e.x, y: e.y, vx: Math.cos(a) * 60, vy: Math.sin(a) * 60, life: 6000 }); }
+    // gear drops: bosses always, lich elites often, trash rarely
+    const dropChance = e.isBoss ? 1 : e.templateId === 'graveyardlich' ? 0.5 : 0.12;
+    if (Math.random() < dropChance) this.cb.onLoot(Math.max(2, e.level * 2), e.isBoss);
     if (e.packId && !this.enemies.some((x) => x.packId === e.packId)) {
       this.defeated.add(e.packId);
       if (e.setsFlag) this.flags[e.setsFlag] = true;
@@ -357,7 +376,7 @@ export class AdventureEngine {
     catch { return; }
     const maxHp = Math.round(u.maxHp * (opts.isBoss ? 2.2 : 0.5));
     this.enemies.push({
-      id: u.id, templateId, sprite: templateId, x: wx, y: wy, hp: maxHp, maxHp,
+      id: u.id, templateId, sprite: templateId, level, x: wx, y: wy, hp: maxHp, maxHp,
       atk: u.atk * (opts.isBoss ? 0.65 : 0.45), def: u.def, spd: u.spd, crit: u.crit, element: u.element,
       speed: 26 + u.spd * 0.6, atkCd: 700, flash: 0, facing: 'south',
       ranged: templateId === 'graveyardlich', isBoss: !!opts.isBoss, packId: opts.packId, setsFlag: opts.setsFlag,
@@ -468,6 +487,31 @@ export class AdventureEngine {
       }
     }
 
+    // allies (AI companions): seek the nearest enemy and attack, else follow you
+    for (const a of this.allies) {
+      if (a.atkCd > 0) a.atkCd -= dt;
+      let tgt: Enemy | null = null, bd = (this.tile * 6) ** 2;
+      for (const e of this.enemies) { const dd = (e.x - a.x) ** 2 + (e.y - a.y) ** 2; if (dd < bd) { bd = dd; tgt = e; } }
+      const goX = tgt ? tgt.x : this.px, goY = tgt ? tgt.y : this.py;
+      const dx = goX - a.x, dy = goY - a.y, dist = Math.hypot(dx, dy) || 1;
+      a.facing = dirFromAngle(Math.atan2(dy, dx));
+      const stop = tgt ? (a.ranged ? this.tile * 4 : this.tile * 0.9) : this.tile * 1.6;
+      if (dist > stop) {
+        const vx = (dx / dist) * a.speed * s, vy = (dy / dist) * a.speed * s;
+        if (this.canBe(a.x + vx, a.y, 9)) a.x += vx;
+        if (this.canBe(a.x, a.y + vy, 9)) a.y += vy;
+      }
+      if (tgt && a.atkCd <= 0 && dist <= (a.ranged ? this.tile * 4.5 : this.tile * 1.2)) {
+        a.atkCd = a.ranged ? 650 : 420;
+        if (a.ranged) {
+          const ang = Math.atan2(dy, dx), sp = 300;
+          this.projs.push({ x: a.x, y: a.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 800, dmg: a.atk, crit: false, fromEnemy: false });
+        } else {
+          this.damageEnemy(tgt, a.power, a);
+        }
+      }
+    }
+
     for (const p of this.projs) {
       p.x += p.vx * s; p.y += p.vy * s; p.life -= dt;
       if (this.solidPx(p.x, p.y)) { p.life = 0; continue; }
@@ -542,6 +586,7 @@ export class AdventureEngine {
     const ds: D[] = [];
     for (const n of this.map.npcs ?? []) if (this.npcVisible(n)) ds.push({ y: n.y * tile, draw: () => this.drawChar(n.sprite, n.facing, false, n.x * tile + tile / 2, n.y * tile + tile / 2, cam, false, n.id) });
     for (const e of this.enemies) ds.push({ y: e.y, draw: () => this.drawEnemy(e, cam) });
+    for (const a of this.allies) ds.push({ y: a.y, draw: () => this.drawAlly(a, cam) });
     ds.push({ y: this.py, draw: () => this.drawPlayer(cam) });
     ds.sort((a, b) => a.y - b.y);
     for (const d of ds) d.draw();
@@ -610,6 +655,14 @@ export class AdventureEngine {
     const top = dy - tile * (e.isBoss ? 1.05 : 0.85);
     ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(dx - w / 2, top, w, 4);
     ctx.fillStyle = e.isBoss ? '#e05a48' : '#c0392b'; ctx.fillRect(dx - w / 2, top, w * frac, 4);
+  }
+
+  private drawAlly(a: Ally, cam: { x: number; y: number }): void {
+    const { ctx, tile } = this;
+    const dx = a.x - cam.x, dy = a.y - cam.y;
+    ctx.strokeStyle = 'rgba(120,200,255,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(dx, dy + tile * 0.4, tile * 0.3, tile * 0.13, 0, 0, Math.PI * 2); ctx.stroke();
+    this.drawChar(a.templateId, a.facing, false, a.x, a.y, cam, false, a.templateId);
   }
 
   private drawPlayer(cam: { x: number; y: number }): void {
