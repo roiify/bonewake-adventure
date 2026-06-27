@@ -19,6 +19,7 @@ const CAM_DIST = 7;     // camera distance behind the hero (world units)
 const CAM_HEIGHT = 6;   // camera height
 const LOOK_Y = 1.2;     // look-at height above ground
 const HERO_H = 1.7;     // hero billboard height (units); boss bigger
+const HOMING_TURN = 7;  // rad/sec a player/ally projectile can curve toward its target
 
 export interface PlayerStats {
   templateId: string; maxHp: number; atk: number; def: number; spd: number; crit: number; element: Element; ranged: boolean; power: number;
@@ -348,6 +349,19 @@ export class AdventureEngine {
       if (tgt && a.atkCd <= 0 && dist <= (a.ranged ? this.tile * 4.5 : this.tile * 1.2)) { a.atkCd = a.ranged ? 650 : 420; if (a.ranged) { const ang = Math.atan2(dy, dx), sp = 300; this.projs.push({ x: a.x, y: a.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 800, dmg: a.atk, crit: false, fromEnemy: false }); } else this.damageEnemy(tgt, a.power, a); }
     }
     for (const p of this.projs) {
+      // homing: player/ally shots curve toward the nearest enemy
+      if (!p.fromEnemy) {
+        let tgt: Enemy | null = null, bd = Infinity;
+        for (const e of this.enemies) { const d = (e.x - p.x) ** 2 + (e.y - p.y) ** 2; if (d < bd) { bd = d; tgt = e; } }
+        if (tgt) {
+          const sp = Math.hypot(p.vx, p.vy) || 1;
+          const cur = Math.atan2(p.vy, p.vx);
+          let diff = Math.atan2(tgt.y - p.y, tgt.x - p.x) - cur;
+          while (diff > Math.PI) diff -= Math.PI * 2; while (diff < -Math.PI) diff += Math.PI * 2;
+          const na = cur + Math.sign(diff) * Math.min(Math.abs(diff), HOMING_TURN * s);
+          p.vx = Math.cos(na) * sp; p.vy = Math.sin(na) * sp;
+        }
+      }
       p.x += p.vx * s; p.y += p.vy * s; p.life -= dt; if (this.solidPx(p.x, p.y)) { p.life = 0; continue; }
       if (p.fromEnemy) { if ((p.x - this.px) ** 2 + (p.y - this.py) ** 2 < 144) { this.hurtPlayer({ dmg: p.dmg, crit: p.crit, strong: false }); p.life = 0; } }
       else { for (const e of this.enemies) { if ((p.x - e.x) ** 2 + (p.y - e.y) ** 2 < 196) { this.damageEnemy(e, this.player.power); p.life = 0; break; } } }
