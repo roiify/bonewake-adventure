@@ -22,8 +22,13 @@ export const DIALOGUE: Record<string, DialogueLine[]> = {
     { who: 'The Warden', text: 'Pick your descent. But the far gates stay barred until you\'ve proven yourself in the shallow dark.' },
   ],
   joss: [
-    { who: 'Joss the Bonepicker', text: 'Tonics? Aye. Brewed from things best not named. They\'ll close a wound mid-fight.' },
-    { who: 'Joss', text: '(Shop\'s not stocked in this build — the till\'s a placeholder. Come back next milestone.)' },
+    { who: 'Joss the Bonepicker', text: 'Gear off the dead, gear for the living. Take a look — coin\'s coin.' },
+  ],
+  smith: [
+    { who: 'Hagen, the Bonesmith', text: 'Bring me a piece with bad blood in it. I\'ll beat the curse out and reforge what it carries.' },
+  ],
+  keeper: [
+    { who: 'The Keeper', text: 'Whatever you can\'t carry, I\'ll hold. Same vault for every soul who walks the Bonewake.' },
   ],
   tender: [
     { who: 'The Tender', text: 'Sit. Breathe. You\'re still warm — that\'s more than most.' },

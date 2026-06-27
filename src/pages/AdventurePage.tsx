@@ -154,8 +154,12 @@ export default function AdventurePage() {
     if (cur) applyDialogue(cur.req);
     const s = useAdventure.getState().save;
     engineRef.current?.syncState({ flags: s.flags, defeated: s.defeated });
-    // The Warden opens the dungeon board instead of resuming.
-    if (cur?.req.npcId === 'warden') setShowDungeons(true);
+    // Town NPCs open their panels instead of resuming the engine.
+    const npc = cur?.req.npcId;
+    if (npc === 'warden') setShowDungeons(true);
+    else if (npc === 'joss') setPanel('shop');
+    else if (npc === 'smith') setPanel('craft');
+    else if (npc === 'keeper') setPanel('stash');
     else engineRef.current?.resume();
   };
 

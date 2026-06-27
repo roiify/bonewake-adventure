@@ -402,6 +402,7 @@ export class AdventureEngine {
     this.scene.remove(this.staticGroup);
     this.staticGroup.traverse((o) => { const m = o as THREE.Mesh; if (m.geometry && m.geometry !== this.quad) m.geometry.dispose?.(); });
     this.staticGroup = new THREE.Group(); this.scene.add(this.staticGroup);
+    for (const n of this.npcMeshes) this.scene.remove(n.mesh); // clear old map's NPC billboards (materials are shared/cached)
     this.gateMeshes = []; this.pickupMarks = []; this.npcMeshes = []; this.doorMats = []; this.descendMesh = undefined;
     const b = BIOME[this.map.biome ?? 'crypt'] ?? BIOME.crypt;
     this.scene.background = new THREE.Color(b.fog); this.scene.fog = new THREE.Fog(b.fog, 16, 46);
