@@ -131,6 +131,7 @@ export class AdventureEngine {
     window.addEventListener('keydown', this.onKeyDown); window.addEventListener('keyup', this.onKeyUp);
     this.canvas.addEventListener('pointerdown', this.onPointerDown); window.addEventListener('pointerup', this.onPointerUp);
     window.addEventListener('resize', this.resize);
+    window.addEventListener('blur', this.clearInput); document.addEventListener('visibilitychange', this.onVisibility);
     this.last = performance.now(); this.raf = requestAnimationFrame(this.loop);
   }
   destroy(): void {
@@ -138,8 +139,13 @@ export class AdventureEngine {
     window.removeEventListener('keydown', this.onKeyDown); window.removeEventListener('keyup', this.onKeyUp);
     this.canvas.removeEventListener('pointerdown', this.onPointerDown); window.removeEventListener('pointerup', this.onPointerUp);
     window.removeEventListener('resize', this.resize);
+    window.removeEventListener('blur', this.clearInput); document.removeEventListener('visibilitychange', this.onVisibility);
     this.keys.clear(); this.renderer.dispose();
   }
+  // Release all inputs when the window loses focus / tab is hidden, so a held
+  // key or d-pad press can never strand the hero auto-running in one direction.
+  private clearInput = (): void => { this.keys.clear(); this.vdir = [0, 0]; this.pointerDown = false; this.attackHeld = false; };
+  private onVisibility = (): void => { if (document.visibilityState !== 'visible') this.clearInput(); };
   pause(): void { this.paused = true; this.keys.clear(); this.vdir = [0, 0]; this.pointerDown = false; }
   resume(): void { this.paused = false; this.last = performance.now(); }
   syncState(s: { flags?: Record<string, boolean>; defeated?: string[] }): void { if (s.flags) this.flags = { ...s.flags }; if (s.defeated) this.defeated = new Set(s.defeated); }
