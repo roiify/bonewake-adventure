@@ -7,8 +7,7 @@
 
 import { asset } from '../assetPath';
 import { loadImage, getTrim } from './sprites';
-import { buildEnemyUnit } from '../stats';
-import type { CombatUnit, Element } from '../../types';
+import { ENEMIES, statsAtLevel, type Element } from '../../data/adventure/units';
 import type { AdventureMap, Dir, NPC, EncounterZone } from '../../data/adventure/types';
 import { ADVENTURE_MAPS } from '../../data/adventure/maps';
 
@@ -373,15 +372,15 @@ export class AdventureEngine {
   }
 
   private spawnEnemy(templateId: string, level: number, wx: number, wy: number, opts: { isBoss?: boolean; packId?: string; setsFlag?: string } = {}): void {
-    let u: CombatUnit;
-    try { u = buildEnemyUnit(templateId, level, opts.isBoss ? 4 : 3, `adv_${this.enemies.length}_${Math.floor(wx)}_${Math.floor(wy)}`); }
-    catch { return; }
-    const maxHp = Math.round(u.maxHp * (opts.isBoss ? 2.2 : 0.5));
+    const def = ENEMIES[templateId];
+    if (!def) return;
+    const s = statsAtLevel(def.base, level);
+    const maxHp = Math.round(s.hp * (opts.isBoss ? 4 : 1));
     this.enemies.push({
-      id: u.id, templateId, sprite: templateId, level, x: wx, y: wy, hp: maxHp, maxHp,
-      atk: u.atk * (opts.isBoss ? 0.65 : 0.45), def: u.def, spd: u.spd, crit: u.crit, element: u.element,
-      speed: 26 + u.spd * 0.6, atkCd: 700, flash: 0, facing: 'south',
-      ranged: templateId === 'graveyardlich', isBoss: !!opts.isBoss, packId: opts.packId, setsFlag: opts.setsFlag,
+      id: `${templateId}_${this.enemies.length}_${Math.floor(wx)}`, templateId, sprite: templateId, level, x: wx, y: wy, hp: maxHp, maxHp,
+      atk: Math.round(s.atk * (opts.isBoss ? 0.9 : 0.6)), def: s.def, spd: s.spd, crit: s.crit, element: def.element,
+      speed: 30 + s.spd * 0.7, atkCd: 700, flash: 0, facing: 'south',
+      ranged: def.ranged, isBoss: !!opts.isBoss, packId: opts.packId, setsFlag: opts.setsFlag,
     });
   }
 
