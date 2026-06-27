@@ -5,10 +5,11 @@ import { ADVENTURE_MAPS } from '../data/adventure/maps';
 import { DIALOGUE } from '../data/adventure/dialogue';
 import DialogueBox from '../components/adventure/DialogueBox';
 import { useAdventure, type PartyMember } from '../store/adventure';
-import { HEROES, heroStats, rollGear, gearScore, xpForLevel, HERO_MAX_LEVEL } from '../data/adventure/units';
+import { HEROES, heroStats, rollItem, xpForLevel, HERO_MAX_LEVEL, type Item, type Rarity } from '../data/adventure/units';
 import { DUNGEONS, DUNGEON_BY_ID, genFloor } from '../data/adventure/dungeons';
 import { RUNTIME_MAPS } from '../data/adventure/runtime';
 import HeroPortrait from '../components/adventure/HeroPortrait';
+import GearPanels, { type PanelMode } from '../components/adventure/GearPanels';
 
 // Hero strength knobs — player hits PLAYER_POWER× harder, PLAYER_HP_MULT× tankier.
 const PLAYER_POWER = 2.4;
@@ -29,16 +30,22 @@ export default function AdventurePage() {
   const [lvl, setLvl] = useState<{ level: number; exp: number; need: number }>({ level: 1, exp: 0, need: 40 });
   const [banner, setBanner] = useState<string | null>(null);
   const [showDungeons, setShowDungeons] = useState(false);
+  const [panel, setPanel] = useState<PanelMode | null>(null);
+  const gold = useAdventure((s) => s.save.gold);
 
   const showToast = (m: string) => { setToast(m); window.setTimeout(() => setToast(null), 1900); };
+  const openPanel = (p: PanelMode) => { engineRef.current?.pause(); setShowDungeons(false); setPanel(p); };
+  const closePanel = () => { setPanel(null); engineRef.current?.resume(); };
+  const reapplyStats = () => { const st = statsFor(useAdventure.getState().save.party[0]); if (st) engineRef.current?.setPlayer(st); };
 
   // --- stats from the self-contained party ---
   const statsFor = (m: PartyMember | undefined): PlayerStats | null => {
     if (!m) return null;
     const def = HEROES[m.heroId];
     if (!def) return null;
-    const s = heroStats(def, m.level, m.gear);
-    return { templateId: m.heroId, maxHp: Math.round(s.hp * PLAYER_HP_MULT), atk: s.atk, def: s.def, spd: s.spd, crit: s.crit, element: def.element, ranged: def.ranged, power: PLAYER_POWER };
+    const items = Object.values(m.equipped ?? {}).filter((x): x is Item => !!x);
+    const s = heroStats(def, m.level, items);
+    return { templateId: m.heroId, maxHp: Math.round(s.hp * PLAYER_HP_MULT), atk: s.atk, def: s.def, spd: s.spd, crit: s.crit, element: def.element, ranged: def.ranged, power: PLAYER_POWER * (1 + s.power) };
   };
   const allyStats = (party: PartyMember[]): PlayerStats[] =>
     party.slice(1).map((m) => statsFor(m)).filter((s): s is PlayerStats => !!s);
@@ -80,29 +87,22 @@ export default function AdventurePage() {
       if (level !== m.level && m === party[0]) leaderLevelUp = level;
       m.level = level; m.exp = exp;
     }
-    adv.patch({ party });
+    adv.patch({ party, gold: adv.save.gold + Math.max(1, Math.round(xp * 0.5)) });
     const st = statsFor(party[0]);
     if (st) engineRef.current?.setPlayer(st);
     engineRef.current?.setAllies(allyStats(party));
     setLvl(readLevel());
     if (leaderLevelUp) showToast(`Level up! Lv ${leaderLevelUp} — stats raised`);
   };
-  const onLoot = (itemLevel: number, isBoss: boolean) => {
-    const g = rollGear(itemLevel, isBoss);
+  // ground loot → the controlled character's backpack (Diablo-style; equip via Inventory)
+  const onPickupLoot = (itemLevel: number, rarity: number) => {
     const adv = useAdventure.getState();
-    const party = adv.save.party.map((m) => ({ ...m, gear: [...m.gear] }));
-    const leader = party[0];
-    const idx = leader.gear.findIndex((x) => x.slot === g.slot);
-    const cur = idx >= 0 ? leader.gear[idx] : null;
-    if (!cur || gearScore(g) > gearScore(cur)) {
-      if (idx >= 0) leader.gear[idx] = g; else leader.gear.push(g);
-      adv.patch({ party });
-      const st = statsFor(leader);
-      if (st) engineRef.current?.setPlayer(st);
-      showToast(`Looted & equipped: ${g.name}`);
-    } else {
-      showToast(`Looted: ${g.name} (weaker — discarded)`);
-    }
+    const leader = adv.save.party[0];
+    const def = HEROES[leader?.heroId];
+    const it = rollItem(itemLevel, { ranged: def?.ranged, forceRarity: rarity as Rarity });
+    const party = adv.save.party.map((m, i) => (i === 0 ? { ...m, inventory: [it, ...m.inventory] } : m));
+    adv.patch({ party });
+    showToast(`Looted: ${it.name}`);
   };
   const onFlag = (flag: string, fixedId?: string) => {
     const adv = useAdventure.getState();
@@ -140,7 +140,7 @@ export default function AdventurePage() {
     engineRef.current?.loadMap(m.id, -1, -1, 'north');
     showToast(`Descending — Floor ${floor}`);
   };
-  const onFloorClearedCb = () => { setBanner('FLOOR CLEARED — green stairs lead down; the red portal returns to town.'); window.setTimeout(() => setBanner(null), 4500); };
+  const onFloorClearedCb = () => showToast('Floor cleared — the stairs down are open. (Red portal = town)');
   const onDeath = () => {
     const inDungeon = !!useAdventure.getState().save.dungeon;
     showToast(inDungeon ? 'You fell. Dragged back to Lastlight…' : 'You fell. You wake at the last shrine.');
@@ -160,7 +160,7 @@ export default function AdventurePage() {
     const adv = useAdventure.getState();
     if (req.recruits && HEROES[req.recruits] && !adv.save.party.some((m) => m.heroId === req.recruits) && adv.save.party.length < 4) {
       const leaderLvl = adv.save.party[0]?.level ?? 1;
-      const party = [...adv.save.party, { heroId: req.recruits, level: leaderLvl, exp: 0, gear: [] }];
+      const party = [...adv.save.party, { heroId: req.recruits, level: leaderLvl, exp: 0, equipped: {}, inventory: [] }];
       adv.patch({ party, flags: { ...adv.save.flags, [`recruited_${req.recruits}`]: true } });
       engineRef.current?.setAllies(allyStats(party));
       showToast(`${HEROES[req.recruits].name} joined the party.`);
@@ -193,7 +193,7 @@ export default function AdventurePage() {
       engineRef.current?.destroy();
       const engine = new AdventureEngine(canvas, {
         mapId, x: px, y: py, facing, player: stats, allies: allyStats(adv.save.party), flags: adv.save.flags, defeated: adv.save.defeated,
-        cb: { onDialogue, onShrine, onAutosave, onHud, onXp, onDeath, onFlag, onLoot, onFloorCleared: onFloorClearedCb, onDescend, onExitTown },
+        cb: { onDialogue, onShrine, onAutosave, onHud, onXp, onDeath, onFlag, onPickupLoot, onFloorCleared: onFloorClearedCb, onDescend, onExitTown },
       });
       engineRef.current = engine;
       engine.start();
@@ -203,6 +203,18 @@ export default function AdventurePage() {
     create();
     return () => { engineRef.current?.destroy(); engineRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // tap "I" to open/close the inventory anywhere
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        setPanel((p) => { const next = p === 'inv' ? null : 'inv'; if (next) engineRef.current?.pause(); else engineRef.current?.resume(); return next; });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // --- touch controls ---
@@ -246,6 +258,17 @@ export default function AdventurePage() {
           <div className="h-full bg-amber-500 transition-[width] duration-150" style={{ width: lvl.level >= HERO_MAX_LEVEL ? '100%' : `${Math.min(100, (lvl.exp / (lvl.need || 1)) * 100)}%` }} />
         </div>
         <span className="font-mono text-[9px] text-zinc-500 shrink-0">{lvl.level >= HERO_MAX_LEVEL ? 'MAX' : `XP ${lvl.exp}/${lvl.need}`}</span>
+      </div>
+
+      {/* facilities */}
+      <div className="flex items-center gap-1.5 px-3 py-1 border-b border-zinc-900 bg-zinc-950/40 text-[11px]">
+        <button type="button" onClick={() => openPanel('inv')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🎒 Inventory <span className="text-zinc-500">(I)</span></button>
+        {hud.map === 'lastlight' && (<>
+          <button type="button" onClick={() => openPanel('shop')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🛒 Shop</button>
+          <button type="button" onClick={() => openPanel('stash')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">📦 Stash</button>
+          <button type="button" onClick={() => openPanel('craft')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">⚒ Reforge</button>
+        </>)}
+        <span className="ml-auto text-amber-300 font-mono shrink-0">🪙 {gold}</span>
       </div>
 
       {/* canvas */}
@@ -322,6 +345,9 @@ export default function AdventurePage() {
           </div>
         </div>
       )}
+
+      {/* inventory / stash / shop / reforge */}
+      {panel && <GearPanels mode={panel} onClose={closePanel} onStatsChanged={reapplyStats} />}
 
       {/* controls */}
       <div className="px-4 pb-6 pt-2">

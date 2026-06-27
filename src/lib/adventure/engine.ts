@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { asset } from '../assetPath';
 import { loadImage, getTrim } from './sprites';
-import { ENEMIES, statsAtLevel, type Element } from '../../data/adventure/units';
+import { ENEMIES, statsAtLevel, rollRarity, RARITY, type Element } from '../../data/adventure/units';
 import type { AdventureMap, Dir, NPC, EncounterZone, DungeonMeta } from '../../data/adventure/types';
 import { ADVENTURE_MAPS } from '../../data/adventure/maps';
 import { RUNTIME_MAPS } from '../../data/adventure/runtime';
@@ -32,7 +32,7 @@ export interface EngineCallbacks {
   onXp: (xp: number) => void;
   onDeath: () => void;
   onFlag: (flag: string, fixedId?: string) => void;
-  onLoot: (itemLevel: number, isBoss: boolean) => void;
+  onPickupLoot: (itemLevel: number, rarity: number) => void;
   onFloorCleared: () => void;
   onDescend: () => void;
   onExitTown: () => void;
@@ -61,6 +61,7 @@ interface Enemy { id: string; templateId: string; sprite: string; level: number;
 interface Ally { templateId: string; x: number; y: number; atk: number; def: number; crit: number; element: Element; power: number; ranged: boolean; speed: number; atkCd: number; facing: Dir; }
 interface Projectile { x: number; y: number; vx: number; vy: number; life: number; dmg: number; crit: boolean; fromEnemy: boolean; }
 interface Orb { x: number; y: number; vx: number; vy: number; life: number; }
+interface LootDrop { x: number; y: number; itemLevel: number; rarity: number; life: number; }
 
 const BIOME: Record<string, { floorA: string; floorB: string; wall: string; wallTop: string; fog: number }> = {
   town: { floorA: '#2a2620', floorB: '#221d17', wall: '#3a3128', wallTop: '#4c4034', fog: 0x140d0a },
@@ -85,7 +86,7 @@ export class AdventureEngine {
   private invuln = 0; private dashTime = 0; private dashVX = 0; private dashVY = 0; private dashCd = 0;
   private xp = 0;
   private enemies: Enemy[] = []; private allies: Ally[] = []; private allyRoster: PlayerStats[] = [];
-  private projs: Projectile[] = []; private orbs: Orb[] = [];
+  private projs: Projectile[] = []; private orbs: Orb[] = []; private drops: LootDrop[] = [];
   private activatedPacks = new Set<string>(); private spawnTimers = new Map<EncounterZone, number>();
 
   // three.js
@@ -93,11 +94,12 @@ export class AdventureEngine {
   private staticGroup = new THREE.Group();
   private quad = new THREE.PlaneGeometry(1, 1);
   private sphere = new THREE.SphereGeometry(0.16, 8, 6);
+  private gem = new THREE.OctahedronGeometry(0.26);
   private sprites = new Map<string, SpriteEntry>();
   private playerMesh!: THREE.Mesh;
   private enemyMeshes: THREE.Mesh[] = []; private hpBg: THREE.Mesh[] = []; private hpFill: THREE.Mesh[] = [];
   private allyMeshes: THREE.Mesh[] = [];
-  private projMeshes: THREE.Mesh[] = []; private orbMeshes: THREE.Mesh[] = [];
+  private projMeshes: THREE.Mesh[] = []; private orbMeshes: THREE.Mesh[] = []; private dropMeshes: THREE.Mesh[] = [];
   private npcMeshes: { mesh: THREE.Mesh; npc: NPC }[] = [];
   private gateMeshes: { mesh: THREE.Mesh; flag: string }[] = [];
   private pickupMarks: { mesh: THREE.Mesh; setsFlag: string; req?: string }[] = [];
@@ -105,6 +107,7 @@ export class AdventureEngine {
   private projMatP = new THREE.MeshBasicMaterial({ color: 0xffe08a });
   private projMatE = new THREE.MeshBasicMaterial({ color: 0xb06bff });
   private orbMat = new THREE.MeshBasicMaterial({ color: 0xffd36b });
+  private rarityMats: THREE.MeshBasicMaterial[] = RARITY.map((r) => new THREE.MeshBasicMaterial({ color: new THREE.Color(r.color || '#ffffff') }));
   private blankMat = new THREE.MeshBasicMaterial({ transparent: true });
   private hpBgMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
   private hpFillMat = new THREE.MeshBasicMaterial({ color: 0xc0392b });
@@ -197,7 +200,7 @@ export class AdventureEngine {
     this.map = m; this.tile = m.tile;
     const sx = x < 0 ? m.spawn.x : x, sy = y < 0 ? m.spawn.y : y;
     this.px = sx * this.tile + this.tile / 2; this.py = sy * this.tile + this.tile / 2; this.facing = facing;
-    this.enemies = []; this.projs = []; this.orbs = []; this.activatedPacks.clear(); this.spawnTimers.clear();
+    this.enemies = []; this.projs = []; this.orbs = []; this.drops = []; this.activatedPacks.clear(); this.spawnTimers.clear();
     this.floorCleared = false;
     this.spawnAllies();
     this.buildScene();
@@ -260,8 +263,11 @@ export class AdventureEngine {
     this.enemies = this.enemies.filter((x) => x !== e);
     const gain = Math.round(e.isBoss ? 400 : 12 + e.maxHp * 0.04); this.xp += gain; this.cb.onXp(gain);
     for (let i = 0, n = e.isBoss ? 8 : 2; i < n; i++) { const a = Math.random() * Math.PI * 2; this.orbs.push({ x: e.x, y: e.y, vx: Math.cos(a) * 60, vy: Math.sin(a) * 60, life: 6000 }); }
-    const dropChance = e.isBoss ? 1 : e.templateId === 'graveyardlich' ? 0.5 : 0.12;
-    if (Math.random() < dropChance) this.cb.onLoot(Math.max(2, e.level * 2), e.isBoss);
+    const dropChance = e.isBoss ? 1 : e.templateId === 'graveyardlich' ? 0.5 : 0.16;
+    if (Math.random() < dropChance) {
+      const rarity = rollRarity(e.isBoss ? 2 : 0, e.isBoss ? 3 : 1);
+      this.drops.push({ x: e.x, y: e.y, itemLevel: Math.max(2, e.level * 2), rarity, life: 45000 });
+    }
     if (e.packId && !this.enemies.some((x) => x.packId === e.packId)) { this.defeated.add(e.packId); if (e.setsFlag) this.flags[e.setsFlag] = true; this.cb.onFlag(e.setsFlag ?? '', e.packId); }
     if (this.map.dungeon && !this.floorCleared && this.enemies.length === 0) { this.floorCleared = true; this.cb.onFloorCleared(); }
   }
@@ -349,6 +355,8 @@ export class AdventureEngine {
     this.projs = this.projs.filter((p) => p.life > 0);
     for (const o of this.orbs) { o.life -= dt; o.vx *= 0.9; o.vy *= 0.9; o.x += o.vx * s; o.y += o.vy * s; const dd = (o.x - this.px) ** 2 + (o.y - this.py) ** 2; if (dd < (this.tile * 1.6) ** 2) { const a = Math.atan2(this.py - o.y, this.px - o.x); o.x += Math.cos(a) * 140 * s; o.y += Math.sin(a) * 140 * s; } if (dd < 100) o.life = 0; }
     this.orbs = this.orbs.filter((o) => o.life > 0);
+    for (const d of this.drops) { d.life -= dt; if ((d.x - this.px) ** 2 + (d.y - this.py) ** 2 < (this.tile * 1.0) ** 2) { this.cb.onPickupLoot(d.itemLevel, d.rarity); d.life = 0; } }
+    this.drops = this.drops.filter((d) => d.life > 0);
     this.worldTriggers();
     this.cb.onHud({ map: this.map.id, hp: Math.max(0, Math.round(this.hp)), maxHp: this.player.maxHp, enemies: this.enemies.length, xp: this.xp });
   }
@@ -478,6 +486,10 @@ export class AdventureEngine {
     // orbs
     let oi = 0; for (const o of this.orbs) { const m = this.getMesh(this.orbMeshes, oi, this.sphere, this.orbMat); m.scale.setScalar(0.5); m.position.set(o.x / this.tile, 0.35, o.y / this.tile); m.visible = true; oi++; }
     for (let k = oi; k < this.orbMeshes.length; k++) this.orbMeshes[k].visible = false;
+    // loot drops — gems colored by rarity, bobbing + spinning
+    let li = 0; const tnow = performance.now();
+    for (const d of this.drops) { const mat = this.rarityMats[d.rarity] ?? this.orbMat; const m = this.getMesh(this.dropMeshes, li, this.gem, mat); m.material = mat; m.position.set(d.x / this.tile, 0.5 + Math.sin(tnow / 300 + li) * 0.12, d.y / this.tile); m.rotation.y = tnow / 700; m.visible = true; li++; }
+    for (let k = li; k < this.dropMeshes.length; k++) this.dropMeshes[k].visible = false;
 
     this.renderer.render(this.scene, this.cam);
   }

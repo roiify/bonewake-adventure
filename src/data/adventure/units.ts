@@ -23,7 +23,23 @@ export interface EnemyDef {
   base: BaseStats;       // stats at level 1
 }
 
-export interface GearPiece { slot: string; name: string; atk: number; hp: number; def: number; rarity: number; }
+// --- ARPG itemization (Diablo / PoE style) ---
+export type Slot = 'weapon' | 'armor' | 'helm' | 'boots' | 'amulet' | 'ring';
+export const SLOTS: Slot[] = ['weapon', 'armor', 'helm', 'boots', 'amulet', 'ring'];
+export type Rarity = 1 | 2 | 3 | 4 | 5; // common / magic / rare / epic / legendary
+export const RARITY = [
+  { name: '', color: '#888' },
+  { name: 'Common', color: '#b8b8b8', affixes: 1 },
+  { name: 'Magic', color: '#6ea8ff', affixes: 2 },
+  { name: 'Rare', color: '#ffd24a', affixes: 3 },
+  { name: 'Epic', color: '#c06bff', affixes: 4 },
+  { name: 'Legendary', color: '#ff8a3a', affixes: 5 },
+] as const;
+export type AffixStat = 'atk' | 'hp' | 'def' | 'crit' | 'spd' | 'atkPct' | 'hpPct' | 'power';
+export interface Affix { stat: AffixStat; value: number; }
+export interface Item { id: string; slot: Slot; base: string; name: string; rarity: Rarity; itemLevel: number; affixes: Affix[]; }
+// Back-compat alias (older code referenced GearPiece)
+export type GearPiece = Item;
 
 // Playable heroes (party). Stats are action-tuned (not the gacha bags).
 export const HEROES: Record<string, HeroDef> = {
@@ -62,36 +78,88 @@ export function statsAtLevel(base: BaseStats, level: number): BaseStats {
   return { hp: Math.round(base.hp * m), atk: Math.round(base.atk * m), def: Math.round(base.def * m), spd: base.spd, crit: base.crit };
 }
 
-// Hero's effective stats = level scaling + flat gear bonuses.
-export function heroStats(def: HeroDef, level: number, gear: GearPiece[]): BaseStats {
+// Hero's effective stats = level scaling + equipped-item affixes (flat + %).
+export function heroStats(def: HeroDef, level: number, items: Item[]): BaseStats & { power: number } {
   const s = statsAtLevel(def.base, level);
-  for (const g of gear) { s.hp += g.hp; s.atk += g.atk; s.def += g.def; }
-  return s;
+  let atkPct = 0, hpPct = 0, power = 0;
+  for (const it of items) for (const a of it.affixes) {
+    if (a.stat === 'atk') s.atk += a.value;
+    else if (a.stat === 'hp') s.hp += a.value;
+    else if (a.stat === 'def') s.def += a.value;
+    else if (a.stat === 'crit') s.crit += a.value;
+    else if (a.stat === 'spd') s.spd += a.value;
+    else if (a.stat === 'atkPct') atkPct += a.value;
+    else if (a.stat === 'hpPct') hpPct += a.value;
+    else if (a.stat === 'power') power += a.value;
+  }
+  s.atk = Math.round(s.atk * (1 + atkPct));
+  s.hp = Math.round(s.hp * (1 + hpPct));
+  return { ...s, power };
 }
 
 export const xpForLevel = (level: number) => Math.round(40 * Math.pow(1.22, level - 1));
 
-const GEAR_SLOTS = ['weapon', 'armor', 'helm', 'boots', 'trinket'];
-const GEAR_NAMES: Record<string, string[]> = {
-  weapon: ['Bone Cleaver', 'Rusted Blade', 'Grave Maul', 'Marrow Spike'],
+const WEAPON_BASES = { melee: ['Bone Cleaver', 'Grave Maul', 'Rusted Katana', 'Marrow Spike', 'Ash Glaive'], ranged: ['Plague Bow', 'Bone Staff', 'Hex Wand', 'Spine Sling', 'Wraith Censer'] };
+const BASES: Record<Slot, string[]> = {
+  weapon: [],
   armor: ['Tattered Hauberk', 'Plague Mail', 'Bonewrought Vest', 'Rotscale Plate'],
-  helm: ['Cracked Helm', 'Skull Cowl', 'Vanguard Visor', 'Mire Hood'],
-  boots: ['Worn Greaves', 'Ash-Walkers', 'Crypt Treads', 'Bog Boots'],
-  trinket: ['Pale Charm', 'Soul Bead', 'Wake-Ward Sigil', 'Cure Vial Shard'],
+  helm: ['Skull Cowl', 'Cracked Helm', 'Vanguard Visor', 'Mire Hood'],
+  boots: ['Ash-Walkers', 'Crypt Treads', 'Worn Greaves', 'Bog Boots'],
+  amulet: ['Pale Charm', 'Soul Bead', 'Wake-Ward Sigil', 'Bone Locket'],
+  ring: ['Grave Band', 'Cure-Vial Ring', 'Rot Signet', 'Marrow Ring'],
 };
-const RARITY_NAME = ['', 'Common', 'Fine', 'Rare', 'Cursed', 'Relic'];
+const SUFFIX = ['of the Grave', 'of Ash', 'of the Wake', 'of Rot', 'of the Cure', 'of Bone', 'of the Pale', 'of Marrow'];
+const rng = () => 0.7 + Math.random() * 0.6;
+type AffixDef = { stat: AffixStat; label: (v: number) => string; roll: (il: number) => number };
+const AFFIXES: AffixDef[] = [
+  { stat: 'atk', label: (v) => `+${v} ATK`, roll: (il) => Math.round(il * 1.7 * rng()) },
+  { stat: 'hp', label: (v) => `+${v} HP`, roll: (il) => Math.round(il * 10 * rng()) },
+  { stat: 'def', label: (v) => `+${v} DEF`, roll: (il) => Math.round(il * 1.1 * rng()) },
+  { stat: 'crit', label: (v) => `+${(v * 100).toFixed(1)}% Crit`, roll: () => +(0.02 + Math.random() * 0.05).toFixed(3) },
+  { stat: 'spd', label: (v) => `+${v} Speed`, roll: () => Math.round(2 + Math.random() * 6) },
+  { stat: 'atkPct', label: (v) => `+${Math.round(v * 100)}% ATK`, roll: () => +(0.05 + Math.random() * 0.12).toFixed(2) },
+  { stat: 'hpPct', label: (v) => `+${Math.round(v * 100)}% HP`, roll: () => +(0.05 + Math.random() * 0.12).toFixed(2) },
+  { stat: 'power', label: (v) => `+${Math.round(v * 100)}% Damage`, roll: () => +(0.05 + Math.random() * 0.13).toFixed(2) },
+];
+const AFFIX_BY_STAT = Object.fromEntries(AFFIXES.map((a) => [a.stat, a])) as Record<AffixStat, AffixDef>;
+export function affixLabel(a: Affix): string { return AFFIX_BY_STAT[a.stat].label(a.value); }
 
-// Self-contained loot roll. itemLevel scales magnitude; bosses roll higher rarity.
-export function rollGear(itemLevel: number, isBoss: boolean): GearPiece {
-  const slot = GEAR_SLOTS[Math.floor(Math.random() * GEAR_SLOTS.length)];
-  const rarity = Math.min(5, (isBoss ? 3 : 1) + Math.floor(Math.random() * (isBoss ? 3 : 3)));
-  const mag = itemLevel * (0.8 + rarity * 0.5);
-  const name = `${RARITY_NAME[rarity]} ${GEAR_NAMES[slot][Math.floor(Math.random() * GEAR_NAMES[slot].length)]}`;
-  // weapons favor atk, armor/helm favor hp/def, etc.
-  const atk = slot === 'weapon' ? Math.round(mag * 2) : Math.round(mag * 0.4);
-  const hp = slot === 'armor' || slot === 'helm' ? Math.round(mag * 12) : Math.round(mag * 4);
-  const def = slot === 'armor' || slot === 'helm' || slot === 'boots' ? Math.round(mag * 1.2) : Math.round(mag * 0.3);
-  return { slot, name, atk, hp, def, rarity };
+let itemCounter = 0;
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+export function rollRarity(luck = 0, minRarity: Rarity = 1): Rarity {
+  const r = Math.random();
+  const leg = 0.01 + luck * 0.015, epic = 0.05 + luck * 0.04, rare = 0.16 + luck * 0.06, magic = 0.34;
+  let rar: Rarity = 1;
+  if (r < leg) rar = 5; else if (r < leg + epic) rar = 4; else if (r < leg + epic + rare) rar = 3; else if (r < leg + epic + rare + magic) rar = 2;
+  return Math.max(rar, minRarity) as Rarity;
 }
 
-export const gearScore = (g: GearPiece) => g.atk * 2 + g.hp * 0.1 + g.def;
+// Roll an item biased to the character (weapon by melee/ranged; slot-appropriate
+// primary affix; higher rarity = more affixes).
+export function rollItem(itemLevel: number, opts: { ranged?: boolean; minRarity?: Rarity; luck?: number; forceRarity?: Rarity } = {}): Item {
+  const rarity = opts.forceRarity ?? rollRarity(opts.luck ?? 0, opts.minRarity ?? 1);
+  const slot = pick(SLOTS);
+  const base = slot === 'weapon' ? pick(opts.ranged ? WEAPON_BASES.ranged : WEAPON_BASES.melee) : pick(BASES[slot]);
+  const count = RARITY[rarity].affixes ?? 1;
+  const primary: AffixStat = slot === 'weapon' ? (Math.random() < 0.5 ? 'atk' : 'atkPct')
+    : (slot === 'armor' || slot === 'helm') ? (Math.random() < 0.5 ? 'hp' : 'def')
+      : slot === 'boots' ? 'spd' : pick(['crit', 'power', 'atkPct', 'hpPct'] as AffixStat[]);
+  const chosen: AffixStat[] = [primary];
+  const remaining = AFFIXES.map((a) => a.stat).filter((s) => s !== primary);
+  while (chosen.length < count && remaining.length) chosen.push(remaining.splice(Math.floor(Math.random() * remaining.length), 1)[0]);
+  const affixes: Affix[] = chosen.map((stat) => ({ stat, value: AFFIX_BY_STAT[stat].roll(itemLevel) }));
+  const name = `${RARITY[rarity].name} ${base}${rarity >= 3 ? ' ' + pick(SUFFIX) : ''}`.trim();
+  itemCounter += 1;
+  return { id: `it${Date.now().toString(36)}${itemCounter}`, slot, base, name, rarity, itemLevel, affixes };
+}
+
+export function itemScore(it: Item): number {
+  let s = 0;
+  for (const a of it.affixes) {
+    if (a.stat === 'atk') s += a.value * 2; else if (a.stat === 'hp') s += a.value * 0.15; else if (a.stat === 'def') s += a.value;
+    else if (a.stat === 'crit') s += a.value * 800; else if (a.stat === 'spd') s += a.value * 3;
+    else if (a.stat === 'atkPct') s += a.value * 400; else if (a.stat === 'hpPct') s += a.value * 200; else if (a.stat === 'power') s += a.value * 500;
+  }
+  return Math.round(s);
+}
