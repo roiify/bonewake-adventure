@@ -430,21 +430,45 @@ export class AdventureEngine {
   // Each mesh keeps its own per-state material/texture so frame offsets don't clash.
   private animBillboard(mesh: THREE.Mesh, heroId: string, facing: Dir, state: 'idle' | 'walk' | 'attack', px: number, py: number): void {
     const a = HEROES[heroId]?.anim; if (!a) { this.billboard(mesh, heroId, facing, false, px, py, HERO_H); return; }
-    let store = mesh.userData.anim as Record<string, THREE.MeshBasicMaterial> | undefined;
-    if (!store) { store = {}; mesh.userData.anim = store; }
-    let mat = store[state];
-    if (!mat) {
-      mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, vertexColors: true });
-      store[state] = mat;
+    const store = (mesh.userData.anim ??= {}) as Record<string, { mat: THREE.MeshBasicMaterial; iw: number; ih: number }>;
+    const fw = a.frameW ?? 64, fh = a.frameH ?? 64;
+    const newMat = () => new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, vertexColors: true });
+
+    if (a.mode === 'side') {
+      const key = `s:${heroId}`;
+      let e = store[key];
+      if (!e) {
+        e = { mat: newMat(), iw: 0, ih: 0 }; store[key] = e;
+        loadImage(asset(a.base)).then((img) => {
+          const tex = new THREE.Texture(img); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+          tex.repeat.set(fw / img.naturalWidth, fh / img.naturalHeight); tex.needsUpdate = true;
+          e!.mat.map = tex; e!.mat.needsUpdate = true; e!.iw = img.naturalWidth; e!.ih = img.naturalHeight;
+        }).catch(() => {});
+      }
+      const st = a.states?.[state] ?? [0, a.cols];
+      const fr = Math.floor((this.animClock / 1000) * a.fps) % Math.max(1, st[1]);
+      if (e.mat.map && e.iw) e.mat.map.offset.set((fr * fw) / e.iw, 1 - ((st[0] + 1) * fh) / e.ih);
+      mesh.material = e.mat;
+      const flip = facing === 'west' ? -1 : 1;
+      mesh.scale.set(a.h * (fw / fh) * flip, a.h, 1);
+      mesh.position.set(px / this.tile, a.h / 2, py / this.tile); mesh.visible = true;
+      return;
+    }
+
+    // dir8: per-state sheet, direction = row
+    const key = `${heroId}:${state}`;
+    let e = store[key];
+    if (!e) {
+      e = { mat: newMat(), iw: 0, ih: 0 }; store[key] = e;
       loadImage(asset(`${a.base}/${state}.png`)).then((img) => {
         const tex = new THREE.Texture(img); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
-        tex.repeat.set(1 / a.cols, 1 / a.rows); tex.needsUpdate = true; mat!.map = tex; mat!.needsUpdate = true;
+        tex.repeat.set(1 / a.cols, 1 / a.rows); tex.needsUpdate = true; e!.mat.map = tex; e!.mat.needsUpdate = true;
       }).catch(() => {});
     }
-    const row = (a.dir as Record<string, number>)[facing] ?? a.dir.south;
+    const row = (a.dir as Record<string, number>)[facing] ?? a.dir?.south ?? 0;
     const fr = Math.floor((this.animClock / 1000) * a.fps) % a.cols;
-    if (mat.map) mat.map.offset.set(fr / a.cols, 1 - (row + 1) / a.rows);
-    mesh.material = mat; mesh.scale.set(a.h, a.h, 1);
+    if (e.mat.map) e.mat.map.offset.set(fr / a.cols, 1 - (row + 1) / a.rows);
+    mesh.material = e.mat; mesh.scale.set(a.h, a.h, 1);
     mesh.position.set(px / this.tile, a.h / 2, py / this.tile); mesh.visible = true;
   }
   private renderHero(mesh: THREE.Mesh, heroId: string, facing: Dir, moving: boolean, attacking: boolean, px: number, py: number): void {

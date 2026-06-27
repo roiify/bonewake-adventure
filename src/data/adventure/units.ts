@@ -9,12 +9,16 @@ export interface BaseStats { hp: number; atk: number; def: number; spd: number; 
 // Optional animated-spritesheet character (grid sheets per state). Rows = facing
 // direction, columns = animation frames. Engine plays frames by movement state.
 export interface HeroAnim {
-  base: string;          // asset folder, e.g. 'sprites/test' with idle.png/walk.png/attack.png
-  cols: number;          // frames per row
-  rows: number;          // direction rows
+  mode?: 'dir8' | 'side';  // dir8 (per-direction rows, default) | side (one sheet, flip L/R)
+  base: string;            // dir8: asset folder (idle/walk/attack.png); side: full sheet path
+  cols: number;            // frames per row
+  rows: number;
   fps: number;
-  dir: { north: number; south: number; east: number; west: number }; // row index per facing
-  h: number;             // billboard height in world units (cells have padding, so bigger)
+  h: number;               // billboard height in world units
+  frameW?: number;         // default 64 (dir8 square)
+  frameH?: number;
+  dir?: { north: number; south: number; east: number; west: number }; // dir8 row per facing
+  states?: { idle: [number, number]; walk: [number, number]; attack: [number, number] }; // side: [row, frameCount]
 }
 
 export interface HeroDef {
@@ -57,7 +61,14 @@ export type GearPiece = Item;
 export const HEROES: Record<string, HeroDef> = {
   // animated test character (8-dir spritesheets w/ sword & shield)
   test: { id: 'test', name: 'Test', role: 'Knight', element: 'light', ranged: false, base: { hp: 1300, atk: 175, def: 95, spd: 88, crit: 0.16 },
-    anim: { base: 'sprites/test', cols: 15, rows: 8, fps: 12, dir: { north: 6, south: 2, east: 0, west: 4 }, h: 2.8 } },
+    anim: { mode: 'dir8', base: 'sprites/test', cols: 15, rows: 8, fps: 12, dir: { north: 6, south: 2, east: 0, west: 4 }, h: 2.8 } },
+  // Heroes99 composited characters (side-view, flip L/R; idle row1 / run row3 / attack row6)
+  blade: { id: 'blade', name: 'Blade', role: 'Swordsman', element: 'fire', ranged: false, base: { hp: 1250, atk: 185, def: 85, spd: 92, crit: 0.18 }, anim: { mode: 'side', base: 'sprites/h99/blade.png', cols: 8, rows: 17, fps: 10, h: 2.1, frameW: 100, frameH: 40, states: { idle: [0, 6], walk: [2, 8], attack: [5, 6] } } },
+  ranger: { id: 'ranger', name: 'Ranger', role: 'Skirmisher', element: 'earth', ranged: false, base: { hp: 1100, atk: 180, def: 70, spd: 100, crit: 0.22 }, anim: { mode: 'side', base: 'sprites/h99/ranger.png', cols: 8, rows: 17, fps: 10, h: 2.1, frameW: 100, frameH: 40, states: { idle: [0, 6], walk: [2, 8], attack: [5, 6] } } },
+  warden: { id: 'warden', name: 'Warden', role: 'Guardian', element: 'water', ranged: false, base: { hp: 1500, atk: 150, def: 120, spd: 64, crit: 0.10 }, anim: { mode: 'side', base: 'sprites/h99/warden.png', cols: 8, rows: 17, fps: 10, h: 2.1, frameW: 100, frameH: 40, states: { idle: [0, 6], walk: [2, 8], attack: [5, 6] } } },
+  mage: { id: 'mage', name: 'Mage', role: 'Spellblade', element: 'light', ranged: false, base: { hp: 1050, atk: 195, def: 62, spd: 84, crit: 0.16 }, anim: { mode: 'side', base: 'sprites/h99/mage.png', cols: 8, rows: 17, fps: 10, h: 2.1, frameW: 100, frameH: 40, states: { idle: [0, 6], walk: [2, 8], attack: [5, 6] } } },
+  brute: { id: 'brute', name: 'Brute', role: 'Berserker', element: 'dark', ranged: false, base: { hp: 1700, atk: 165, def: 100, spd: 58, crit: 0.12 }, anim: { mode: 'side', base: 'sprites/h99/brute.png', cols: 8, rows: 17, fps: 10, h: 2.3, frameW: 100, frameH: 40, states: { idle: [0, 6], walk: [2, 8], attack: [5, 6] } } },
+  scout: { id: 'scout', name: 'Scout', role: 'Duelist', element: 'earth', ranged: false, base: { hp: 1150, atk: 178, def: 75, spd: 98, crit: 0.20 }, anim: { mode: 'side', base: 'sprites/h99/scout.png', cols: 8, rows: 17, fps: 10, h: 2.1, frameW: 100, frameH: 40, states: { idle: [0, 6], walk: [2, 8], attack: [5, 6] } } },
   // melee
   reiji: { id: 'reiji', name: 'Reiji', role: 'Ronin', element: 'dark', ranged: false, base: { hp: 1180, atk: 180, def: 82, spd: 92, crit: 0.20 } },
   kengo: { id: 'kengo', name: 'Kengo', role: 'Pit Fighter', element: 'earth', ranged: false, base: { hp: 1300, atk: 160, def: 95, spd: 72, crit: 0.10 } },
