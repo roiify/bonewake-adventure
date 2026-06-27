@@ -30,6 +30,7 @@ export interface AdvSave {
   createdAt: number;
   dungeon: { id: string; floor: number } | null;  // current dungeon run (null = overworld/town)
   dungeonDepth: Record<string, number>;            // deepest floor per dungeon
+  salvageRarities: number[];                        // rarities auto-salvaged on pickup (loot filter)
 }
 
 const KEY = 'bonewake_adv_slots';
@@ -40,13 +41,13 @@ function freshSlot(heroId: string): AdvSave {
   return {
     id: newId(), createdHero: heroId, mapId: 'lastlight', px: -1, py: -1, facing: 'south',
     party: [{ heroId, level: 1, exp: 0, equipped: {}, inventory: [] }], flags: {}, defeated: [], cureProgress: 0,
-    depth: 0, gold: 0, skills: [], createdAt: Date.now(), dungeon: null, dungeonDepth: {},
+    depth: 0, gold: 0, skills: [], createdAt: Date.now(), dungeon: null, dungeonDepth: {}, salvageRarities: [],
   };
 }
 function normalizeSlot(s: AdvSave): AdvSave {
   const party = (Array.isArray(s.party) && s.party.length ? s.party : [{ heroId: s.createdHero ?? 'reiji', level: 1, exp: 0, equipped: {}, inventory: [] }])
     .map((m) => ({ heroId: m.heroId, level: m.level ?? 1, exp: m.exp ?? 0, equipped: m.equipped ?? {}, inventory: m.inventory ?? [] }));
-  return { ...s, party, flags: s.flags ?? {}, defeated: s.defeated ?? [], depth: s.depth ?? 0, gold: s.gold ?? 0, skills: s.skills ?? [], dungeon: s.dungeon ?? null, dungeonDepth: s.dungeonDepth ?? {} };
+  return { ...s, party, flags: s.flags ?? {}, defeated: s.defeated ?? [], depth: s.depth ?? 0, gold: s.gold ?? 0, skills: s.skills ?? [], dungeon: s.dungeon ?? null, dungeonDepth: s.dungeonDepth ?? {}, salvageRarities: s.salvageRarities ?? [] };
 }
 function readSlots(): AdvSave[] {
   try { const r = localStorage.getItem(KEY); if (r) { const a = JSON.parse(r); if (Array.isArray(a)) return a.map(normalizeSlot); } } catch { /* ignore */ }

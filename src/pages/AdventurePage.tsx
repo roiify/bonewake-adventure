@@ -5,7 +5,7 @@ import { ADVENTURE_MAPS } from '../data/adventure/maps';
 import { DIALOGUE } from '../data/adventure/dialogue';
 import DialogueBox from '../components/adventure/DialogueBox';
 import { useAdventure, type PartyMember } from '../store/adventure';
-import { HEROES, heroStats, rollItem, xpForLevel, HERO_MAX_LEVEL, type Item, type Rarity } from '../data/adventure/units';
+import { HEROES, heroStats, rollItem, xpForLevel, HERO_MAX_LEVEL, itemSellValue, RARITY, type Item, type Rarity } from '../data/adventure/units';
 import { DUNGEONS, DUNGEON_BY_ID, genFloor, isUnlocked } from '../data/adventure/dungeons';
 import { RUNTIME_MAPS } from '../data/adventure/runtime';
 import HeroPortrait from '../components/adventure/HeroPortrait';
@@ -100,9 +100,14 @@ export default function AdventurePage() {
     const leader = adv.save.party[0];
     const def = HEROES[leader?.heroId];
     const it = rollItem(itemLevel, { ranged: def?.ranged, forceRarity: rarity as Rarity });
+    // loot filter: auto-salvage filtered rarities straight to gold
+    if (adv.save.salvageRarities?.includes(it.rarity)) {
+      adv.patch({ gold: adv.save.gold + itemSellValue(it) });
+      return;
+    }
     const party = adv.save.party.map((m, i) => (i === 0 ? { ...m, inventory: [it, ...m.inventory] } : m));
     adv.patch({ party });
-    showToast(`Looted: ${it.name}`);
+    showToast(`Looted: ${RARITY[it.rarity].name} ${it.base}`);
   };
   const onFlag = (flag: string, fixedId?: string) => {
     const adv = useAdventure.getState();
@@ -270,6 +275,7 @@ export default function AdventurePage() {
       {/* facilities */}
       <div className="flex items-center gap-1.5 px-3 py-1 border-b border-zinc-900 bg-zinc-950/40 text-[11px]">
         <button type="button" onClick={() => openPanel('inv')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🎒 Inventory <span className="text-zinc-500">(I)</span></button>
+        <button type="button" onClick={() => openPanel('filter')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🔎 Filter</button>
         {hud.map === 'lastlight' && (<>
           <button type="button" onClick={() => openPanel('shop')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🛒 Shop</button>
           <button type="button" onClick={() => openPanel('stash')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">📦 Stash</button>

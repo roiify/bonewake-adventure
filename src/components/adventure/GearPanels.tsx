@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useAdventure, type PartyMember } from '../../store/adventure';
-import { HEROES, RARITY, SLOTS, affixLabel, itemScore, rollItem, type Item } from '../../data/adventure/units';
+import { HEROES, RARITY, SLOTS, affixLabel, itemScore, itemSellValue, rollItem, type Item } from '../../data/adventure/units';
 
-export type PanelMode = 'inv' | 'stash' | 'shop' | 'craft';
+export type PanelMode = 'inv' | 'stash' | 'shop' | 'craft' | 'filter';
 
-const sellPrice = (it: Item) => Math.round(itemScore(it) * 0.4) + it.rarity * 6 + it.itemLevel;
+const sellPrice = itemSellValue;
 const buyPrice = (it: Item) => sellPrice(it) * 3;
+const RARITY_IDS = [1, 2, 3, 4, 5];
 const reforgeCost = (it: Item) => 30 + it.itemLevel * 4 + it.rarity * 20;
 const SLOT_ICON: Record<string, string> = { weapon: '⚔', armor: '🛡', helm: '🪖', boots: '🥾', amulet: '📿', ring: '💍' };
 
@@ -106,8 +107,29 @@ export default function GearPanels({ mode, onClose, onStatsChanged }: { mode: Pa
     });
     useAdventure.getState().patch({ party }); onStatsChanged(); setSel(null);
   };
+  const sellAllRarity = (r: number) => {
+    const adv = useAdventure.getState();
+    const items = adv.save.party[0].inventory.filter((x) => x.rarity === r);
+    if (!items.length) return;
+    const gain = items.reduce((s, it) => s + sellPrice(it), 0);
+    const party = mutLeader((m) => { m.inventory = m.inventory.filter((x) => x.rarity !== r); return m; });
+    adv.patch({ party, gold: adv.save.gold + gain });
+  };
+  const sellAll = () => {
+    const adv = useAdventure.getState();
+    const items = adv.save.party[0].inventory;
+    if (!items.length) return;
+    const gain = items.reduce((s, it) => s + sellPrice(it), 0);
+    const party = mutLeader((m) => { m.inventory = []; return m; });
+    adv.patch({ party, gold: adv.save.gold + gain });
+  };
+  const toggleSalvage = (r: number) => {
+    const adv = useAdventure.getState();
+    const cur = adv.save.salvageRarities ?? [];
+    adv.patch({ salvageRarities: cur.includes(r) ? cur.filter((x) => x !== r) : [...cur, r] });
+  };
 
-  const TITLES: Record<PanelMode, string> = { inv: 'Inventory', stash: 'Stash', shop: 'Shop', craft: 'Reforge' };
+  const TITLES: Record<PanelMode, string> = { inv: 'Inventory', stash: 'Stash', shop: 'Shop', craft: 'Reforge', filter: 'Loot Filter' };
   const inv = leader?.inventory ?? [];
 
   return (
@@ -192,10 +214,36 @@ export default function GearPanels({ mode, onClose, onStatsChanged }: { mode: Pa
                 <ItemCard key={it.id} it={it} sub={`${buyPrice(it)}🪙`} onClick={() => buy(it)} />
               ))}
             </div>
-            <div className="text-[10px] text-zinc-500 mb-1">Sell your backpack</div>
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-[10px] text-zinc-500">Sell your backpack</div>
+              <button type="button" onClick={sellAll} disabled={!inv.length} className="text-[10px] px-2 py-0.5 rounded bg-amber-900/60 border border-amber-800 text-amber-100 disabled:opacity-40">Sell All (+{inv.reduce((s, it) => s + sellPrice(it), 0)}🪙)</button>
+            </div>
+            {inv.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {RARITY_IDS.map((r) => { const n = inv.filter((i) => i.rarity === r).length; if (!n) return null;
+                  return <button key={r} type="button" onClick={() => sellAllRarity(r)} className="text-[10px] px-2 py-0.5 rounded border border-zinc-700 bg-zinc-900" style={{ color: RARITY[r].color }}>Sell {RARITY[r].name} ×{n}</button>; })}
+              </div>
+            )}
             <div className="space-y-1.5">
               {inv.length === 0 && <div className="text-zinc-700 text-[11px] py-2">nothing to sell</div>}
               {inv.map((it) => <ItemCard key={it.id} it={it} sub={`sell +${sellPrice(it)}🪙`} onClick={() => sell(it)} />)}
+            </div>
+          </>
+        )}
+
+        {/* LOOT FILTER */}
+        {mode === 'filter' && (
+          <>
+            <p className="text-[10px] text-zinc-500 mb-2">Toggle a rarity to <span className="text-amber-300">auto-salvage</span> it the instant it drops — it turns straight into gold instead of filling your backpack. Great for skipping Commons on deep runs.</p>
+            <div className="space-y-1.5">
+              {RARITY_IDS.map((r) => { const on = (save.salvageRarities ?? []).includes(r);
+                return (
+                  <button key={r} type="button" onClick={() => toggleSalvage(r)}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-lg border ${on ? 'border-amber-600 bg-amber-950/30' : 'border-zinc-800 bg-zinc-900'}`}>
+                    <span style={{ color: RARITY[r].color }} className="text-sm font-semibold">{RARITY[r].name}</span>
+                    <span className={`text-[11px] ${on ? 'text-amber-300' : 'text-emerald-400/80'}`}>{on ? '↺ Auto-salvage' : '✓ Keep'}</span>
+                  </button>
+                ); })}
             </div>
           </>
         )}

@@ -163,3 +163,6 @@ export function itemScore(it: Item): number {
   }
   return Math.round(s);
 }
+
+// Gold an item sells / salvages for.
+export const itemSellValue = (it: Item) => Math.round(itemScore(it) * 0.4) + it.rarity * 6 + it.itemLevel;
