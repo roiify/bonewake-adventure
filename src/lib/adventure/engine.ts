@@ -208,6 +208,8 @@ export class AdventureEngine {
     this.spawnAllies();
     this.buildScene();
     if (m.dungeon) this.spawnWave(m.dungeon);
+    // warm all 4 facing sprites so the first turn never blinks
+    for (const d of ['south', 'north', 'east', 'west']) this.getSprite(`sprites/pixellab/heroes/pro/${this.player.templateId}_${d}.png`);
     this.cb.onHud({ map: m.id, hp: this.hp, maxHp: this.player.maxHp, enemies: 0, xp: this.xp });
   }
   private spawnWave(dm: DungeonMeta): void {
@@ -403,14 +405,15 @@ export class AdventureEngine {
   // ---------------- sprites (cropped, size-normalized textures) ----------------
   private getSprite(path: string): SpriteEntry {
     let e = this.sprites.get(path); if (e) return e;
-    const mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
+    // opacity 0 until the texture loads, else a map-less material renders as a white quad (flash on first turn)
+    const mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, opacity: 0 });
     e = { mat, aspect: 0.6, ready: false }; this.sprites.set(path, e);
     const setup = (img: HTMLImageElement, entry: SpriteEntry) => {
       const tr = getTrim(img); const tex = new THREE.Texture(img);
       tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
       tex.offset.set(tr.sx / img.naturalWidth, 1 - (tr.sy + tr.sh) / img.naturalHeight);
       tex.repeat.set(tr.sw / img.naturalWidth, tr.sh / img.naturalHeight); tex.needsUpdate = true;
-      entry.mat.map = tex; entry.mat.needsUpdate = true; entry.aspect = tr.sw / tr.sh; entry.ready = true;
+      entry.mat.map = tex; entry.mat.opacity = 1; entry.mat.needsUpdate = true; entry.aspect = tr.sw / tr.sh; entry.ready = true;
     };
     loadImage(asset(path)).then((img) => setup(img, e!)).catch(() => {
       const south = path.replace(/_(north|east|west)\.png$/, '_south.png');
