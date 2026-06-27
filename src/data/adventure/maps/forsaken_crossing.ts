@@ -23,9 +23,8 @@ export const FORSAKEN_CROSSING: AdventureMap = {
     { id: 'refugee', sprite: 'chino', x: 3, y: 8, facing: 'east', dialogueId: 'refugee' },
   ],
   signs: [{ x: 10, y: 9, dialogueId: 'crossing_sign' }],
-  encounterZones: [
-    { x: 4, y: 2, w: 14, h: 8, enemies: ['shambler', 'fastghoul'], min: 1, max: 2, minLevel: 2, maxLevel: 4, dangerBase: 24, bgChapter: 1 },
-  ],
+  // No ambient (infinite) spawns — repeatable combat lives in the dungeon board.
+  // Only a single one-time encounter remains as a story beat.
   fixedEncounters: [
     { id: 'crossing_knight', sprite: 'boneknight', x: 11, y: 3, facing: 'south', enemies: ['boneknight', 'fastghoul'], levels: [6, 5], bgChapter: 1, setsFlag: 'crossing_knight_down' },
   ],

@@ -12,15 +12,21 @@ export interface DungeonDef {
   baseLevel: number;     // enemy level on floor 1
   enemies: string[];     // ENEMIES pool
   blurb: string;
+  unlockReq?: { dungeon: string; floor: number }; // must reach this floor in another dungeon first
 }
 
 export const DUNGEONS: DungeonDef[] = [
   { id: 'burial', name: 'The Old Burial Ground', biome: 'crypt', baseLevel: 1, enemies: ['shambler', 'fastghoul', 'boneknight', 'graveyardlich'], blurb: 'Shallow graves. Where every survivor cuts their teeth.' },
-  { id: 'wastes', name: 'The Scorched Wastes', biome: 'field', baseLevel: 8, enemies: ['fastghoul', 'boneknight', 'shambler', 'graveyardlich'], blurb: 'Open ash-fields crawling with fast dead.' },
-  { id: 'necropolis', name: 'The Necropolis', biome: 'crypt', baseLevel: 16, enemies: ['boneknight', 'graveyardlich', 'fastghoul'], blurb: 'The dead\'s own city. Bring a leveled party.' },
+  { id: 'wastes', name: 'The Scorched Wastes', biome: 'field', baseLevel: 8, enemies: ['fastghoul', 'boneknight', 'shambler', 'graveyardlich'], blurb: 'Open ash-fields crawling with fast dead.', unlockReq: { dungeon: 'burial', floor: 5 } },
+  { id: 'necropolis', name: 'The Necropolis', biome: 'crypt', baseLevel: 16, enemies: ['boneknight', 'graveyardlich', 'fastghoul'], blurb: 'The dead\'s own city. Bring a leveled party.', unlockReq: { dungeon: 'wastes', floor: 5 } },
 ];
 
 export const DUNGEON_BY_ID: Record<string, DungeonDef> = Object.fromEntries(DUNGEONS.map((d) => [d.id, d]));
+
+// A dungeon is unlocked once you've reached the required floor in its prerequisite.
+export function isUnlocked(d: DungeonDef, depth: Record<string, number>): boolean {
+  return !d.unlockReq || (depth[d.unlockReq.dungeon] ?? 0) >= d.unlockReq.floor;
+}
 
 export const floorLevel = (d: DungeonDef, floor: number) => d.baseLevel + Math.floor((floor - 1) * 1.5);
 export const floorCount = (floor: number) => Math.min(12, 4 + Math.floor(floor * 0.7));

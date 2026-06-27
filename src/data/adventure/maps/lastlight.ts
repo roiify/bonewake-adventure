@@ -26,6 +26,8 @@ export const LASTLIGHT: AdventureMap = {
     { id: 'mara', sprite: 'aelia', x: 9, y: 3, facing: 'south', dialogueId: 'mara', altDialogueId: 'mara__done', altFlag: 'have_cure_fragment' },
     { id: 'joss', sprite: 'george', x: 7, y: 4, facing: 'south', dialogueId: 'joss', shop: true },
     { id: 'tender', sprite: 'pyra', x: 13, y: 8, facing: 'south', dialogueId: 'tender', heal: true },
+    // The Warden — talk to choose a dungeon descent.
+    { id: 'warden', sprite: 'kengo', x: 11, y: 6, facing: 'south', dialogueId: 'warden' },
     // Luna is recruited here in town (Act I).
     { id: 'luna', sprite: 'luna', x: 5, y: 8, facing: 'east', dialogueId: 'luna_recruit', recruits: 'luna', hideAfterFlag: 'recruited_luna' },
   ],

@@ -6,7 +6,7 @@ import { DIALOGUE } from '../data/adventure/dialogue';
 import DialogueBox from '../components/adventure/DialogueBox';
 import { useAdventure, type PartyMember } from '../store/adventure';
 import { HEROES, heroStats, rollItem, xpForLevel, HERO_MAX_LEVEL, type Item, type Rarity } from '../data/adventure/units';
-import { DUNGEONS, DUNGEON_BY_ID, genFloor } from '../data/adventure/dungeons';
+import { DUNGEONS, DUNGEON_BY_ID, genFloor, isUnlocked } from '../data/adventure/dungeons';
 import { RUNTIME_MAPS } from '../data/adventure/runtime';
 import HeroPortrait from '../components/adventure/HeroPortrait';
 import GearPanels, { type PanelMode } from '../components/adventure/GearPanels';
@@ -121,6 +121,7 @@ export default function AdventurePage() {
   // --- dungeon flow ---
   const enterDungeon = (id: string) => {
     const d = DUNGEON_BY_ID[id]; if (!d) return;
+    if (!isUnlocked(d, useAdventure.getState().save.dungeonDepth)) { showToast('That descent is still barred.'); return; }
     const m = genFloor(d, 1); RUNTIME_MAPS[m.id] = m;
     useAdventure.getState().patch({ dungeon: { id, floor: 1 }, mapId: m.id, px: -1, py: -1, facing: 'north' });
     setShowDungeons(false);
@@ -153,7 +154,9 @@ export default function AdventurePage() {
     if (cur) applyDialogue(cur.req);
     const s = useAdventure.getState().save;
     engineRef.current?.syncState({ flags: s.flags, defeated: s.defeated });
-    engineRef.current?.resume();
+    // The Warden opens the dungeon board instead of resuming.
+    if (cur?.req.npcId === 'warden') setShowDungeons(true);
+    else engineRef.current?.resume();
   };
 
   const applyDialogue = (req: DialogueRequest) => {
@@ -326,17 +329,22 @@ export default function AdventurePage() {
             </div>
             <div className="space-y-2">
               {DUNGEONS.map((d) => {
-                const best = useAdventure.getState().save.dungeonDepth[d.id] ?? 0;
+                const dd = useAdventure.getState().save.dungeonDepth;
+                const best = dd[d.id] ?? 0;
+                const unlocked = isUnlocked(d, dd);
                 const tough = d.baseLevel > lvl.level + 3;
+                const reqName = d.unlockReq ? DUNGEON_BY_ID[d.unlockReq.dungeon]?.name : '';
                 return (
-                  <button key={d.id} type="button" onClick={() => enterDungeon(d.id)}
-                    className="w-full text-left p-3 rounded-lg border border-zinc-700 bg-zinc-900 active:bg-zinc-800 hover:border-red-600">
+                  <button key={d.id} type="button" disabled={!unlocked} onClick={() => enterDungeon(d.id)}
+                    className={`w-full text-left p-3 rounded-lg border ${unlocked ? 'border-zinc-700 bg-zinc-900 active:bg-zinc-800 hover:border-red-600' : 'border-zinc-800 bg-zinc-950 opacity-60 cursor-not-allowed'}`}>
                     <div className="flex items-center justify-between">
-                      <span className="text-zinc-100 text-sm font-semibold">{d.name}</span>
+                      <span className="text-zinc-100 text-sm font-semibold">{unlocked ? '' : '🔒 '}{d.name}</span>
                       <span className={`text-[10px] ${tough ? 'text-red-400' : 'text-emerald-400'}`}>Lv {d.baseLevel}+{tough ? ' ⚠ tough' : ''}</span>
                     </div>
                     <div className="text-zinc-500 text-[11px] mt-0.5">{d.blurb}</div>
-                    <div className="text-zinc-600 text-[10px] mt-1">Deepest reached: Floor {best}</div>
+                    {unlocked
+                      ? <div className="text-zinc-600 text-[10px] mt-1">Deepest reached: Floor {best}</div>
+                      : <div className="text-amber-500/80 text-[10px] mt-1">🔒 Reach Floor {d.unlockReq!.floor} of {reqName} to unlock</div>}
                   </button>
                 );
               })}

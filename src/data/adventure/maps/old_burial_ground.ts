@@ -34,9 +34,7 @@ export const OLD_BURIAL_GROUND: AdventureMap = {
   ],
   shrines: [{ x: 3, y: 14 }],
   gateDoors: [{ x: 9, y: 9, openFlag: 'gate_patrol_down' }],
-  encounterZones: [
-    { x: 2, y: 10, w: 16, h: 5, enemies: ['fastghoul', 'boneknight', 'graveyardlich'], min: 1, max: 2, minLevel: 5, maxLevel: 7, dangerBase: 20, bgChapter: 4 },
-  ],
+  // No ambient (infinite) spawns — only the one-time story packs below.
   fixedEncounters: [
     // gate patrol — beating it opens the gate to the boss chamber
     { id: 'gate_patrol', sprite: 'boneknight', x: 9, y: 11, facing: 'south', enemies: ['boneknight', 'fastghoul'], levels: [7, 6], bgChapter: 4, setsFlag: 'gate_patrol_down' },

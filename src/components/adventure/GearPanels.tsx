@@ -88,6 +88,25 @@ export default function GearPanels({ mode, onClose, onStatsChanged }: { mode: Pa
     adv.patch({ party, gold: adv.save.gold - cost }); setSel(reforged);
   };
 
+  // equip the highest-score item in every slot (from equipped + backpack)
+  const autoEquip = () => {
+    const party = useAdventure.getState().save.party.map((m, i) => {
+      if (i !== 0) return m;
+      const equipped = { ...m.equipped }; let inv = [...m.inventory];
+      for (const slot of SLOTS) {
+        const cands = [equipped[slot], ...inv.filter((x) => x.slot === slot)].filter(Boolean) as Item[];
+        if (!cands.length) continue;
+        const best = cands.reduce((a, b) => (itemScore(b) > itemScore(a) ? b : a));
+        if (equipped[slot]?.id === best.id) continue;
+        inv = inv.filter((x) => x.id !== best.id);
+        if (equipped[slot]) inv.push(equipped[slot]!);
+        equipped[slot] = best;
+      }
+      return { ...m, equipped, inventory: inv };
+    });
+    useAdventure.getState().patch({ party }); onStatsChanged(); setSel(null);
+  };
+
   const TITLES: Record<PanelMode, string> = { inv: 'Inventory', stash: 'Stash', shop: 'Shop', craft: 'Reforge' };
   const inv = leader?.inventory ?? [];
 
@@ -105,6 +124,7 @@ export default function GearPanels({ mode, onClose, onStatsChanged }: { mode: Pa
         {/* INVENTORY */}
         {mode === 'inv' && (
           <>
+            <button type="button" onClick={autoEquip} className="w-full mb-2 py-1.5 rounded-lg bg-emerald-800/70 text-emerald-50 text-xs font-semibold border border-emerald-700 active:bg-emerald-700">✨ Auto-Equip Best</button>
             <div className="grid grid-cols-3 gap-1.5 mb-3">
               {SLOTS.map((slot) => {
                 const it = leader?.equipped?.[slot] ?? null;
