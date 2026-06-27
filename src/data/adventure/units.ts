@@ -27,13 +27,24 @@ export interface GearPiece { slot: string; name: string; atk: number; hp: number
 
 // Playable heroes (party). Stats are action-tuned (not the gacha bags).
 export const HEROES: Record<string, HeroDef> = {
+  // melee
   reiji: { id: 'reiji', name: 'Reiji', role: 'Ronin', element: 'dark', ranged: false, base: { hp: 1180, atk: 180, def: 82, spd: 92, crit: 0.20 } },
   kengo: { id: 'kengo', name: 'Kengo', role: 'Pit Fighter', element: 'earth', ranged: false, base: { hp: 1300, atk: 160, def: 95, spd: 72, crit: 0.10 } },
-  luna: { id: 'luna', name: 'Luna', role: 'Bloodmage', element: 'light', ranged: true, base: { hp: 1050, atk: 145, def: 70, spd: 82, crit: 0.08 } },
-  elara: { id: 'elara', name: 'Elara', role: 'Plague Archer', element: 'earth', ranged: true, base: { hp: 920, atk: 180, def: 58, spd: 96, crit: 0.22 } },
   kaius: { id: 'kaius', name: 'Kaius', role: 'Fallen Paladin', element: 'light', ranged: false, base: { hp: 1750, atk: 130, def: 145, spd: 50, crit: 0.08 } },
   george: { id: 'george', name: 'George', role: 'Wild Shaman', element: 'earth', ranged: false, base: { hp: 1500, atk: 150, def: 100, spd: 60, crit: 0.10 } },
+  korvan: { id: 'korvan', name: 'Korvan', role: 'Soul-Reaper', element: 'dark', ranged: false, base: { hp: 1350, atk: 170, def: 90, spd: 70, crit: 0.14 } },
+  len: { id: 'len', name: 'Arcaveli', role: 'Veteran Assassin', element: 'dark', ranged: false, base: { hp: 950, atk: 185, def: 60, spd: 98, crit: 0.24 } },
+  chino: { id: 'chino', name: 'Chino', role: 'Drunken Master', element: 'earth', ranged: false, base: { hp: 1200, atk: 158, def: 88, spd: 80, crit: 0.16 } },
+  // ranged
+  elara: { id: 'elara', name: 'Elara', role: 'Plague Archer', element: 'earth', ranged: true, base: { hp: 920, atk: 180, def: 58, spd: 96, crit: 0.22 } },
+  luna: { id: 'luna', name: 'Luna', role: 'Bloodmage', element: 'light', ranged: true, base: { hp: 1050, atk: 145, def: 70, spd: 82, crit: 0.08 } },
+  aelia: { id: 'aelia', name: 'Aelia', role: 'Frost Mage', element: 'water', ranged: true, base: { hp: 980, atk: 175, def: 62, spd: 78, crit: 0.14 } },
+  pyra: { id: 'pyra', name: 'Pyra', role: 'Pyromancer', element: 'fire', ranged: true, base: { hp: 980, atk: 185, def: 60, spd: 80, crit: 0.15 } },
+  manny: { id: 'manny', name: 'Manny', role: 'Death Caller', element: 'dark', ranged: true, base: { hp: 1000, atk: 170, def: 65, spd: 72, crit: 0.12 } },
+  twins: { id: 'twins', name: 'The Twins', role: 'Bound As One', element: 'light', ranged: true, base: { hp: 1100, atk: 178, def: 70, spd: 85, crit: 0.16 } },
 };
+
+export const ROSTER: HeroDef[] = Object.values(HEROES);
 
 // Common bestiary. Action-tuned (low HP so fights are snappy).
 export const ENEMIES: Record<string, EnemyDef> = {

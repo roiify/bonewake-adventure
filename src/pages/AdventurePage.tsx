@@ -6,7 +6,7 @@ import { DIALOGUE } from '../data/adventure/dialogue';
 import DialogueBox from '../components/adventure/DialogueBox';
 import { useAdventure, type PartyMember } from '../store/adventure';
 import { HEROES, heroStats, rollGear, gearScore, xpForLevel, HERO_MAX_LEVEL } from '../data/adventure/units';
-import { asset } from '../lib/assetPath';
+import HeroPortrait from '../components/adventure/HeroPortrait';
 
 // Hero strength knobs — player hits PLAYER_POWER× harder, PLAYER_HP_MULT× tankier.
 const PLAYER_POWER = 2.4;
@@ -107,7 +107,8 @@ export default function AdventurePage() {
     if (flag) flags[flag] = true;
     const defeated = fixedId && !adv.save.defeated.includes(fixedId) ? [...adv.save.defeated, fixedId] : adv.save.defeated;
     if (flag === 'beat_first_lich') flags['cleared_old_burial_ground'] = true;
-    adv.patch({ flags, defeated });
+    const depth = flag === 'beat_first_lich' ? Math.max(adv.save.depth, 1) : adv.save.depth;
+    adv.patch({ flags, defeated, depth });
     engineRef.current?.syncState({ flags, defeated });
     if (flag === 'beat_first_lich') {
       setBanner('DUNGEON CLEARED — The First Lich is destroyed. Grab the Cure Fragment, then leave through a door.');
@@ -167,7 +168,6 @@ export default function AdventurePage() {
       setLvl(readLevel());
     };
     respawnRef.current = () => create({ respawn: true });
-    useAdventure.getState().load();
     create();
     return () => { engineRef.current?.destroy(); engineRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,7 +190,8 @@ export default function AdventurePage() {
     <div className="h-full w-full max-w-[480px] mx-auto flex flex-col bg-zinc-950 text-zinc-100 select-none relative">
       {/* top bar: map + HP + hero swap */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800">
-        <span className="text-zinc-600 text-xs tracking-wide shrink-0">☠</span>
+        <button type="button" aria-label="characters" onClick={() => useAdventure.getState().exitToSelect()}
+          className="shrink-0 px-2 py-1 rounded-lg bg-zinc-800 text-zinc-300 text-[11px] border border-zinc-700 active:bg-zinc-700">‹</button>
         <div className="text-[11px] tracking-widest uppercase text-red-400/80 shrink-0">{mapName}</div>
         <div className="flex-1 flex items-center gap-2">
           <div className="flex-1 h-3 rounded bg-zinc-800 overflow-hidden border border-zinc-700">
@@ -242,7 +243,7 @@ export default function AdventurePage() {
                 return (
                   <button key={p.heroId} type="button" onClick={() => pickHero(p.heroId)}
                     className={`flex items-center gap-2 p-2 rounded-lg border text-left ${active ? 'border-red-500 bg-red-950/40' : 'border-zinc-700 bg-zinc-900 active:bg-zinc-800'}`}>
-                    <img src={asset(`sprites/pixellab/heroes/pro/${p.heroId}_south.png`)} alt="" style={{ imageRendering: 'pixelated' }} className="w-10 h-12 object-contain shrink-0" />
+                    <div className="shrink-0"><HeroPortrait heroId={p.heroId} w={40} h={48} /></div>
                     <div className="min-w-0">
                       <div className="text-zinc-100 text-sm truncate">{p.def?.name ?? p.heroId}{active && ' ●'}</div>
                       <div className="text-zinc-500 text-[10px] capitalize truncate">{p.def?.role} · {p.def?.element} · Lv {p.lvl}</div>
