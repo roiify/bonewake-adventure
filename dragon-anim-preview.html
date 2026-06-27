@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>BoneWake Dragon — attack preview</title>
+<style>
+body { background:#0a0708; color:#e4e4e7; font-family:sans-serif; padding:20px; }
+.row { display:flex; gap:30px; align-items:flex-start; flex-wrap:wrap; }
+.col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.label { font-size:13px; color:#a1a1aa; }
+.frame { width:340px; height:340px; overflow:hidden; background:#1a0807; border:1px solid #444;
+  background-image: radial-gradient(ellipse at center, #2a0a08 0%, #0a0303 70%); }
+.frame .sprite {
+  width:1530px; height:170px; transform:scale(2); transform-origin:top left;
+  background-image:url('sprites/bosses/bonewake_dragon_attack.png');
+  background-repeat:no-repeat; image-rendering:pixelated;
+  animation: play 0.9s steps(9) infinite;
+}
+.frame.slow .sprite { animation-duration:2s; }
+.frame.fast .sprite { animation-duration:0.45s; }
+@keyframes play {
+  from { background-position: 0 0; }
+  to   { background-position: -1530px 0; }
+}
+.strip { background:#1a0807; padding:10px; border:1px solid #444; max-width:100%; overflow-x:auto; }
+.strip img { image-rendering:pixelated; height:170px; display:block; }
+h1 { color:#fbbf24; margin-bottom:30px; }
+</style></head>
+<body>
+<h1>BoneWake Dragon — Attack Animation</h1>
+<div class="row">
+  <div class="col"><div class="label">SLOW (2s loop)</div><div class="frame slow"><div class="sprite"></div></div></div>
+  <div class="col"><div class="label">NORMAL (0.9s loop)</div><div class="frame"><div class="sprite"></div></div></div>
+  <div class="col"><div class="label">FAST (0.45s loop)</div><div class="frame fast"><div class="sprite"></div></div></div>
+</div>
+<h2 style="margin-top:40px;color:#a1a1aa;font-size:14px">Raw 9-frame strip</h2>
+<div class="strip"><img src="sprites/bosses/bonewake_dragon_attack.png"></div>
+</body></html>

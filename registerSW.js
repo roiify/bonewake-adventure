@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/bonewake-adventure/sw.js', { scope: '/bonewake-adventure/' })})}
