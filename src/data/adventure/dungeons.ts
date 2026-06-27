@@ -37,12 +37,13 @@ export const floorMapId = (dungeonId: string, floor: number) => `dgn_${dungeonId
 export function genFloor(d: DungeonDef, floor: number): AdventureMap {
   const W = 17, H = 13;
   const seed = (floor * 2654435761) % 1000;
+  // Isolated 1×1 pillars in the interior only — never touching a wall or sitting
+  // on the spawn / stairs / exit lanes, so nothing can box an enemy into a pocket.
+  const spots: [number, number][] = [[4, 4], [W - 5, 4], [4, H - 5], [W - 5, H - 5], [6, 6], [W - 7, H - 7]];
   const rects: Rect[] = [];
-  for (let i = 0; i < 3; i++) {
-    const x = 3 + ((seed * (i + 3)) % (W - 7));
-    const y = 4 + ((seed * (i + 5)) % (H - 8));
-    rects.push({ x, y, w: 2, h: 1 });
-  }
+  const used = new Set<number>();
+  const n = 2 + (seed % 2);
+  for (let i = 0; i < n; i++) { const idx = (seed + i * 3) % spots.length; if (used.has(idx)) continue; used.add(idx); const [x, y] = spots[idx]; rects.push({ x, y, w: 1, h: 1 }); }
   const grid = makeGrid(W, H, rects);
   return {
     id: floorMapId(d.id, floor),

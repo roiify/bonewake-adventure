@@ -58,7 +58,7 @@ function hit(att: { atk: number; crit: number; element: Element }, def: { def: n
 }
 function dirFromAngle(ang: number): Dir { const c = Math.cos(ang), s = Math.sin(ang); if (Math.abs(c) >= Math.abs(s)) return c >= 0 ? 'east' : 'west'; return s >= 0 ? 'south' : 'north'; }
 
-interface Enemy { id: string; templateId: string; sprite: string; level: number; x: number; y: number; hp: number; maxHp: number; atk: number; def: number; spd: number; crit: number; element: Element; speed: number; atkCd: number; flash: number; facing: Dir; ranged: boolean; isBoss: boolean; packId?: string; setsFlag?: string; }
+interface Enemy { id: string; templateId: string; sprite: string; level: number; x: number; y: number; hp: number; maxHp: number; atk: number; def: number; spd: number; crit: number; element: Element; speed: number; atkCd: number; flash: number; facing: Dir; ranged: boolean; isBoss: boolean; packId?: string; setsFlag?: string; wallSide: number; }
 interface Ally { templateId: string; x: number; y: number; atk: number; def: number; crit: number; element: Element; power: number; ranged: boolean; speed: number; atkCd: number; facing: Dir; }
 interface Projectile { x: number; y: number; vx: number; vy: number; life: number; dmg: number; crit: boolean; fromEnemy: boolean; }
 interface Orb { x: number; y: number; vx: number; vy: number; life: number; }
@@ -114,6 +114,7 @@ export class AdventureEngine {
   private hpFillMat = new THREE.MeshBasicMaterial({ color: 0xc0392b });
   private hpFillBossMat = new THREE.MeshBasicMaterial({ color: 0xe05a48 });
   private floorCleared = false;
+  private killStall = 0; // ms since the dungeon enemy count last dropped (anti-stuck safety)
   private descendMesh?: THREE.Mesh;
 
   constructor(canvas: HTMLCanvasElement, init: EngineInit) {
@@ -202,7 +203,7 @@ export class AdventureEngine {
     const sx = x < 0 ? m.spawn.x : x, sy = y < 0 ? m.spawn.y : y;
     this.px = sx * this.tile + this.tile / 2; this.py = sy * this.tile + this.tile / 2; this.facing = facing;
     this.enemies = []; this.projs = []; this.orbs = []; this.drops = []; this.activatedPacks.clear(); this.spawnTimers.clear();
-    this.floorCleared = false;
+    this.floorCleared = false; this.killStall = 0;
     this.spawnAllies();
     this.buildScene();
     if (m.dungeon) this.spawnWave(m.dungeon);
@@ -262,6 +263,7 @@ export class AdventureEngine {
   }
   private killEnemy(e: Enemy): void {
     this.enemies = this.enemies.filter((x) => x !== e);
+    this.killStall = 0; // progress made — reset the anti-stuck timer
     const gain = Math.round(e.isBoss ? 400 : 12 + e.maxHp * 0.04); this.xp += gain; this.cb.onXp(gain);
     for (let i = 0, n = e.isBoss ? 8 : 2; i < n; i++) { const a = Math.random() * Math.PI * 2; this.orbs.push({ x: e.x, y: e.y, vx: Math.cos(a) * 60, vy: Math.sin(a) * 60, life: 6000 }); }
     const dropChance = e.isBoss ? 1 : e.templateId === 'graveyardlich' ? 0.5 : 0.16;
@@ -275,7 +277,7 @@ export class AdventureEngine {
   private spawnEnemy(templateId: string, level: number, wx: number, wy: number, opts: { isBoss?: boolean; packId?: string; setsFlag?: string } = {}): void {
     const def = ENEMIES[templateId]; if (!def) return; const s = statsAtLevel(def.base, level);
     const maxHp = Math.round(s.hp * (opts.isBoss ? 4 : 1));
-    this.enemies.push({ id: `${templateId}_${this.enemies.length}_${Math.floor(wx)}`, templateId, sprite: templateId, level, x: wx, y: wy, hp: maxHp, maxHp, atk: Math.round(s.atk * (opts.isBoss ? 0.9 : 0.6)), def: s.def, spd: s.spd, crit: s.crit, element: def.element, speed: 30 + s.spd * 0.7, atkCd: 700, flash: 0, facing: 'south', ranged: def.ranged, isBoss: !!opts.isBoss, packId: opts.packId, setsFlag: opts.setsFlag });
+    this.enemies.push({ id: `${templateId}_${this.enemies.length}_${Math.floor(wx)}`, templateId, sprite: templateId, level, x: wx, y: wy, hp: maxHp, maxHp, atk: Math.round(s.atk * (opts.isBoss ? 0.9 : 0.6)), def: s.def, spd: s.spd, crit: s.crit, element: def.element, speed: 30 + s.spd * 0.7, atkCd: 700, flash: 0, facing: 'south', ranged: def.ranged, isBoss: !!opts.isBoss, packId: opts.packId, setsFlag: opts.setsFlag, wallSide: 1 });
   }
   private updateSpawns(dt: number): void {
     for (const z of this.map.encounterZones ?? []) {
@@ -333,7 +335,19 @@ export class AdventureEngine {
       if (e.flash > 0) e.flash -= dt; if (e.atkCd > 0) e.atkCd -= dt;
       const dx = this.px - e.x, dy = this.py - e.y, dist = Math.hypot(dx, dy) || 1; e.facing = dirFromAngle(Math.atan2(dy, dx));
       const range = e.ranged ? this.tile * 5 : this.tile * 0.7;
-      if (dist > range) { const vx = (dx / dist) * e.speed * s, vy = (dy / dist) * e.speed * s; if (this.canBe(e.x + vx, e.y, 9)) e.x += vx; if (this.canBe(e.x, e.y + vy, 9)) e.y += vy; }
+      if (dist > range) {
+        const vx = (dx / dist) * e.speed * s, vy = (dy / dist) * e.speed * s;
+        const ox = e.x, oy = e.y;
+        if (this.canBe(e.x + vx, e.y, 9)) e.x += vx;
+        if (this.canBe(e.x, e.y + vy, 9)) e.y += vy;
+        // fully blocked → slide perpendicular (wall-follow) to get around the obstacle
+        if (e.x === ox && e.y === oy) {
+          const tx = -(dy / dist) * e.speed * s * e.wallSide, ty = (dx / dist) * e.speed * s * e.wallSide;
+          if (this.canBe(e.x + tx, e.y + ty, 9)) { e.x += tx; e.y += ty; }
+          else if (this.canBe(e.x - tx, e.y - ty, 9)) { e.x -= tx; e.y -= ty; e.wallSide = -e.wallSide; }
+          else e.wallSide = -e.wallSide;
+        }
+      }
       if (e.atkCd <= 0 && dist <= range + (e.ranged ? 0 : this.tile * 0.4)) {
         e.atkCd = e.ranged ? 1300 : 900;
         if (e.ranged) { const a = Math.atan2(dy, dx), sp = 160; const h = hit({ atk: e.atk, crit: e.crit, element: e.element }, { def: this.player.def, element: this.player.element }, 1); this.projs.push({ x: e.x, y: e.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 2500, dmg: h.dmg, crit: h.crit, fromEnemy: true }); }
@@ -373,6 +387,14 @@ export class AdventureEngine {
     this.orbs = this.orbs.filter((o) => o.life > 0);
     for (const d of this.drops) { d.life -= dt; if ((d.x - this.px) ** 2 + (d.y - this.py) ** 2 < (this.tile * 1.0) ** 2) { this.cb.onPickupLoot(d.itemLevel, d.rarity); d.life = 0; } }
     this.drops = this.drops.filter((d) => d.life > 0);
+    // anti-stuck safety: if a dungeon floor's leftover enemies are unreachable and
+    // no kill lands for a while, clear them so the stairs can still appear.
+    if (this.map.dungeon && !this.floorCleared && this.enemies.length > 0) {
+      this.killStall += dt;
+      const n = this.nearestEnemy();
+      const far = !n || (n.x - this.px) ** 2 + (n.y - this.py) ** 2 > (this.tile * 3) ** 2;
+      if (this.killStall > 14000 && far) { this.enemies = []; this.floorCleared = true; this.cb.onFloorCleared(); }
+    }
     this.worldTriggers();
     this.cb.onHud({ map: this.map.id, hp: Math.max(0, Math.round(this.hp)), maxHp: this.player.maxHp, enemies: this.enemies.length, xp: this.xp });
   }
