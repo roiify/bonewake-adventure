@@ -204,6 +204,7 @@ export class AdventureEngine {
     this.px = sx * this.tile + this.tile / 2; this.py = sy * this.tile + this.tile / 2; this.facing = facing;
     this.enemies = []; this.projs = []; this.orbs = []; this.drops = []; this.activatedPacks.clear(); this.spawnTimers.clear();
     this.floorCleared = false; this.killStall = 0;
+    this.clearInput(); // drop any held key so it can't carry across a transition and strand movement
     this.spawnAllies();
     this.buildScene();
     if (m.dungeon) this.spawnWave(m.dungeon);
