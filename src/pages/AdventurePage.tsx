@@ -214,8 +214,8 @@ export default function AdventurePage() {
 
       {/* canvas */}
       <div className="flex-1 flex items-center justify-center overflow-hidden p-2 relative">
-        <canvas ref={canvasRef} style={{ imageRendering: 'pixelated', cursor: 'crosshair', touchAction: 'none' }}
-          className="w-full max-w-[460px] h-auto rounded-lg border border-zinc-800 shadow-[0_0_40px_rgba(192,57,43,0.18)]" />
+        <canvas ref={canvasRef} style={{ touchAction: 'none' }}
+          className="w-full max-w-[640px] aspect-[4/3] rounded-lg border border-zinc-800 shadow-[0_0_40px_rgba(192,57,43,0.18)]" />
         {dialogue && <DialogueBox lines={dialogue.lines} onClose={closeDialogue} />}
         {toast && <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-lg bg-zinc-900/95 border border-red-900/50 text-xs text-zinc-100 shadow-lg max-w-[90%] text-center">{toast}</div>}
         {banner && (

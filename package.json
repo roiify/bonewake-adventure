@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@types/three": "^0.160.0",
     "clsx": "^2.1.1",
     "dexie": "^4.4.2",
     "framer-motion": "^12.39.0",
@@ -20,6 +21,7 @@
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1",
     "seedrandom": "^3.0.5",
+    "three": "^0.160.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
