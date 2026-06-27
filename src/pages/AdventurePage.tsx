@@ -36,9 +36,9 @@ export default function AdventurePage() {
   const gold = useAdventure((s) => s.save.gold);
 
   const showToast = (m: string) => { setToast(m); window.setTimeout(() => setToast(null), 1900); };
-  // Menus are non-blocking: the engine keeps running so WASD still moves you.
-  const openPanel = (p: PanelMode) => { setShowDungeons(false); setPanel(p); };
-  const closePanel = () => { setPanel(null); };
+  // Menus freeze the world (pause on open, resume on close).
+  const openPanel = (p: PanelMode) => { engineRef.current?.pause(); setShowDungeons(false); setPanel(p); };
+  const closePanel = () => { setPanel(null); engineRef.current?.resume(); };
   const reapplyStats = () => { const st = statsFor(useAdventure.getState().save.party[0]); if (st) engineRef.current?.setPlayer(st); };
 
   // --- stats from the self-contained party ---
@@ -59,8 +59,10 @@ export default function AdventurePage() {
 
   // --- hero picker ---
   const partyList = () => useAdventure.getState().save.party.map((m) => ({ heroId: m.heroId, lvl: m.level, def: HEROES[m.heroId] }));
-  const openPicker = () => { setShowPicker(true); };
-  const closePicker = () => { setShowPicker(false); };
+  const openPicker = () => { engineRef.current?.pause(); setShowPicker(true); };
+  const closePicker = () => { setShowPicker(false); engineRef.current?.resume(); };
+  const openSheet = () => { engineRef.current?.pause(); setShowSheet(true); };
+  const closeSheet = () => { setShowSheet(false); engineRef.current?.resume(); };
   const pickHero = (heroId: string) => {
     const adv = useAdventure.getState();
     const party = [...adv.save.party];
@@ -183,9 +185,9 @@ export default function AdventurePage() {
     if (cur) applyDialogue(cur.req);
     const s = useAdventure.getState().save;
     engineRef.current?.syncState({ flags: s.flags, defeated: s.defeated });
-    // The Mercenary NPC opens the hire menu; engine keeps running either way.
+    // The Mercenary NPC opens the hire menu (stays paused); everything else resumes.
     if (cur?.req.npcId === 'mercenary') setShowMercs(true);
-    engineRef.current?.resume();
+    else engineRef.current?.resume();
   };
 
   const applyDialogue = (req: DialogueRequest) => {
@@ -240,8 +242,8 @@ export default function AdventurePage() {
   // "I" = inventory, "P" = character sheet (non-blocking — you can still move)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setPanel((p) => (p === 'inv' ? null : 'inv')); }
-      else if (e.key === 'p' || e.key === 'P') { e.preventDefault(); setShowSheet((v) => !v); }
+      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setPanel((p) => { const next = p === 'inv' ? null : 'inv'; if (next) engineRef.current?.pause(); else engineRef.current?.resume(); return next; }); }
+      else if (e.key === 'p' || e.key === 'P') { e.preventDefault(); setShowSheet((v) => { const next = !v; if (next) engineRef.current?.pause(); else engineRef.current?.resume(); return next; }); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -276,7 +278,7 @@ export default function AdventurePage() {
         <button type="button" onClick={openPicker}
           className="shrink-0 px-2 py-1 rounded-lg bg-zinc-800 text-zinc-200 text-[11px] border border-zinc-700 active:bg-zinc-700">⇄ Hero</button>
         {hud.map === 'lastlight' && (
-          <button type="button" onClick={() => setShowDungeons(true)}
+          <button type="button" onClick={() => { engineRef.current?.pause(); setShowDungeons(true); }}
             className="shrink-0 px-2 py-1 rounded-lg bg-red-900/60 text-zinc-100 text-[11px] border border-red-800 active:bg-red-800">⚔ Dungeons</button>
         )}
       </div>
@@ -292,7 +294,7 @@ export default function AdventurePage() {
 
       {/* facilities */}
       <div className="flex items-center gap-1.5 px-3 py-1 border-b border-zinc-900 bg-zinc-950/40 text-[11px]">
-        <button type="button" onClick={() => setShowSheet(true)} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🧍 Stats <span className="text-zinc-500">(P)</span></button>
+        <button type="button" onClick={openSheet} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🧍 Stats <span className="text-zinc-500">(P)</span></button>
         <button type="button" onClick={() => openPanel('inv')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🎒 Inventory <span className="text-zinc-500">(I)</span></button>
         <button type="button" onClick={() => openPanel('filter')} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 active:bg-zinc-700">🔎 Filter</button>
         {hud.map === 'lastlight' && (<>
@@ -435,11 +437,11 @@ export default function AdventurePage() {
           ['👟 Speed', st.spd], ['💥 Crit', `${Math.round(st.crit * 100)}%`], ['🔥 Damage', `${st.power.toFixed(2)}×`],
         ];
         return (
-          <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-3" onClick={() => setShowSheet(false)}>
+          <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-3" onClick={closeSheet}>
             <div className="w-full max-w-[420px] rounded-xl border border-red-900/50 bg-zinc-950 p-4" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm uppercase tracking-widest text-red-400/90">Character</h2>
-                <button type="button" onClick={() => setShowSheet(false)} className="text-zinc-500 text-lg leading-none px-1">✕</button>
+                <button type="button" onClick={closeSheet} className="text-zinc-500 text-lg leading-none px-1">✕</button>
               </div>
               <div className="flex items-center gap-3 mb-3">
                 <HeroPortrait heroId={m.heroId} w={56} h={68} />
