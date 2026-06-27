@@ -23,9 +23,11 @@ export interface AdvSave {
   flags: Record<string, boolean>;
   defeated: string[];
   cureProgress: number;
-  depth: number;         // dungeons cleared / depth reached
+  depth: number;         // best dungeon floor reached (any dungeon)
   skills: string[];      // unlocked skill ids (reserved for the skill system)
   createdAt: number;
+  dungeon: { id: string; floor: number } | null;  // current dungeon run (null = overworld/town)
+  dungeonDepth: Record<string, number>;            // deepest floor per dungeon
 }
 
 const KEY = 'bonewake_adv_slots';
@@ -36,7 +38,7 @@ function freshSlot(heroId: string): AdvSave {
   return {
     id: newId(), createdHero: heroId, mapId: 'lastlight', px: -1, py: -1, facing: 'south',
     party: [{ heroId, level: 1, exp: 0, gear: [] }], flags: {}, defeated: [], cureProgress: 0,
-    depth: 0, skills: [], createdAt: Date.now(),
+    depth: 0, skills: [], createdAt: Date.now(), dungeon: null, dungeonDepth: {},
   };
 }
 function readSlots(): AdvSave[] {

@@ -11,8 +11,9 @@ import * as THREE from 'three';
 import { asset } from '../assetPath';
 import { loadImage, getTrim } from './sprites';
 import { ENEMIES, statsAtLevel, type Element } from '../../data/adventure/units';
-import type { AdventureMap, Dir, NPC, EncounterZone } from '../../data/adventure/types';
+import type { AdventureMap, Dir, NPC, EncounterZone, DungeonMeta } from '../../data/adventure/types';
 import { ADVENTURE_MAPS } from '../../data/adventure/maps';
+import { RUNTIME_MAPS } from '../../data/adventure/runtime';
 
 const CAM_DIST = 7;     // camera distance behind the hero (world units)
 const CAM_HEIGHT = 6;   // camera height
@@ -32,6 +33,9 @@ export interface EngineCallbacks {
   onDeath: () => void;
   onFlag: (flag: string, fixedId?: string) => void;
   onLoot: (itemLevel: number, isBoss: boolean) => void;
+  onFloorCleared: () => void;
+  onDescend: () => void;
+  onExitTown: () => void;
 }
 export interface EngineInit {
   mapId: string; x: number; y: number; facing: Dir; player: PlayerStats; allies: PlayerStats[];
@@ -105,6 +109,8 @@ export class AdventureEngine {
   private hpBgMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
   private hpFillMat = new THREE.MeshBasicMaterial({ color: 0xc0392b });
   private hpFillBossMat = new THREE.MeshBasicMaterial({ color: 0xe05a48 });
+  private floorCleared = false;
+  private descendMesh?: THREE.Mesh;
 
   constructor(canvas: HTMLCanvasElement, init: EngineInit) {
     this.canvas = canvas; this.cb = init.cb; this.player = init.player; this.hp = init.player.maxHp;
@@ -185,15 +191,31 @@ export class AdventureEngine {
   private npcVisible(n: NPC): boolean { if (n.hideAfterFlag && this.flags[n.hideAfterFlag]) return false; if (n.requiresFlag && !this.flags[n.requiresFlag]) return false; return true; }
 
   // ---------------- map / collision ----------------
+  loadMap(mapId: string, x = -1, y = -1, facing: Dir = 'south'): void { this.setMap(mapId, x, y, facing); this.resume(); }
   private setMap(mapId: string, x: number, y: number, facing: Dir): void {
-    const m = ADVENTURE_MAPS[mapId]; if (!m) throw new Error(`unknown map ${mapId}`);
+    const m = RUNTIME_MAPS[mapId] ?? ADVENTURE_MAPS[mapId]; if (!m) throw new Error(`unknown map ${mapId}`);
     this.map = m; this.tile = m.tile;
     const sx = x < 0 ? m.spawn.x : x, sy = y < 0 ? m.spawn.y : y;
     this.px = sx * this.tile + this.tile / 2; this.py = sy * this.tile + this.tile / 2; this.facing = facing;
     this.enemies = []; this.projs = []; this.orbs = []; this.activatedPacks.clear(); this.spawnTimers.clear();
+    this.floorCleared = false;
     this.spawnAllies();
     this.buildScene();
+    if (m.dungeon) this.spawnWave(m.dungeon);
     this.cb.onHud({ map: m.id, hp: this.hp, maxHp: this.player.maxHp, enemies: 0, xp: this.xp });
+  }
+  private spawnWave(dm: DungeonMeta): void {
+    for (let i = 0; i < dm.count; i++) {
+      const boss = dm.boss && i === 0;
+      let wx = 0, wy = 0, ok = false;
+      for (let t = 0; t < 24; t++) {
+        const x = (1 + Math.random() * (this.map.w - 2)) * this.tile, y = (1 + Math.random() * (this.map.h - 3)) * this.tile;
+        if (this.canBe(x, y, 10) && (x - this.px) ** 2 + (y - this.py) ** 2 > (this.tile * 3.5) ** 2) { wx = x; wy = y; ok = true; break; }
+      }
+      if (!ok) continue;
+      const id = boss && dm.enemies.includes('graveyardlich') ? 'graveyardlich' : dm.enemies[Math.floor(Math.random() * dm.enemies.length)];
+      this.spawnEnemy(id, dm.level + (boss ? 2 : 0), wx, wy, { isBoss: boss });
+    }
   }
   private spawnAllies(): void {
     this.allies = this.allyRoster.map((p, i) => {
@@ -241,6 +263,7 @@ export class AdventureEngine {
     const dropChance = e.isBoss ? 1 : e.templateId === 'graveyardlich' ? 0.5 : 0.12;
     if (Math.random() < dropChance) this.cb.onLoot(Math.max(2, e.level * 2), e.isBoss);
     if (e.packId && !this.enemies.some((x) => x.packId === e.packId)) { this.defeated.add(e.packId); if (e.setsFlag) this.flags[e.setsFlag] = true; this.cb.onFlag(e.setsFlag ?? '', e.packId); }
+    if (this.map.dungeon && !this.floorCleared && this.enemies.length === 0) { this.floorCleared = true; this.cb.onFloorCleared(); }
   }
   private spawnEnemy(templateId: string, level: number, wx: number, wy: number, opts: { isBoss?: boolean; packId?: string; setsFlag?: string } = {}): void {
     const def = ENEMIES[templateId]; if (!def) return; const s = statsAtLevel(def.base, level);
@@ -270,6 +293,12 @@ export class AdventureEngine {
   }
   private worldTriggers(): void {
     const tx = Math.floor(this.px / this.tile), ty = Math.floor(this.py / this.tile);
+    if (this.map.dungeon) {
+      const dm = this.map.dungeon;
+      if (tx === dm.exit.x && ty === dm.exit.y) { this.cb.onExitTown(); return; }
+      if (this.floorCleared && tx === dm.descend.x && ty === dm.descend.y) { this.cb.onDescend(); return; }
+      return; // dungeon floors have no static warps/pickups/shrines
+    }
     const warp = (this.map.warps ?? []).find((w) => w.x === tx && w.y === ty);
     if (warp) { this.cb.onAutosave(warp.toMap, warp.toX, warp.toY, warp.facing); this.setMap(warp.toMap, warp.toX, warp.toY, warp.facing); return; }
     const pk = (this.map.pickups ?? []).find((p) => p.x === tx && p.y === ty && !this.flags[p.setsFlag] && (!p.requiresFlag || this.flags[p.requiresFlag]));
@@ -365,7 +394,7 @@ export class AdventureEngine {
     this.scene.remove(this.staticGroup);
     this.staticGroup.traverse((o) => { const m = o as THREE.Mesh; if (m.geometry && m.geometry !== this.quad) m.geometry.dispose?.(); });
     this.staticGroup = new THREE.Group(); this.scene.add(this.staticGroup);
-    this.gateMeshes = []; this.pickupMarks = []; this.npcMeshes = []; this.doorMats = [];
+    this.gateMeshes = []; this.pickupMarks = []; this.npcMeshes = []; this.doorMats = []; this.descendMesh = undefined;
     const b = BIOME[this.map.biome ?? 'crypt'] ?? BIOME.crypt;
     this.scene.background = new THREE.Color(b.fog); this.scene.fog = new THREE.Fog(b.fog, 16, 46);
 
@@ -400,6 +429,14 @@ export class AdventureEngine {
     for (const pk of this.map.pickups ?? []) { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0xbfe6ff, emissive: 0x7fbfff, emissiveIntensity: 0.8 })); m.position.set(pk.x + 0.5, 0.6, pk.y + 0.5); this.staticGroup.add(m); this.pickupMarks.push({ mesh: m, setsFlag: pk.setsFlag, req: pk.requiresFlag }); }
     // NPCs as billboards
     for (const n of this.map.npcs ?? []) { const mesh = new THREE.Mesh(this.quad, new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })); this.scene.add(mesh); this.npcMeshes.push({ mesh, npc: n }); }
+    // dungeon portals: exit-to-town (red, always) + stairs-down (green, after clear)
+    if (this.map.dungeon) {
+      const dm = this.map.dungeon;
+      const exitMat = new THREE.MeshStandardMaterial({ color: 0x3a1010, emissive: 0xff5a3a, emissiveIntensity: 0.6, transparent: true, opacity: 0.92 });
+      const exit = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.7), exitMat); exit.position.set(dm.exit.x + 0.5, 0.9, dm.exit.y + 0.5); this.staticGroup.add(exit); this.doorMats.push(exitMat);
+      const desMat = new THREE.MeshStandardMaterial({ color: 0x103a24, emissive: 0x6bffa0, emissiveIntensity: 0.7, transparent: true, opacity: 0.92 });
+      const des = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.9), desMat); des.position.set(dm.descend.x + 0.5, 0.95, dm.descend.y + 0.5); des.visible = false; this.staticGroup.add(des); this.descendMesh = des; this.doorMats.push(desMat);
+    }
   }
 
   // ---------------- 3D render ----------------
@@ -410,6 +447,7 @@ export class AdventureEngine {
     for (const m of this.doorMats) m.emissiveIntensity = pulse;
     for (const g of this.gateMeshes) g.mesh.visible = !this.flags[g.flag];
     for (const p of this.pickupMarks) p.mesh.visible = !this.flags[p.setsFlag] && (!p.req || this.flags[p.req]);
+    if (this.descendMesh) this.descendMesh.visible = this.floorCleared;
     for (const n of this.npcMeshes) { if (this.npcVisible(n.npc)) this.billboard(n.mesh, n.npc.sprite, n.npc.facing, false, n.npc.x * this.tile + this.tile / 2, n.npc.y * this.tile + this.tile / 2, HERO_H); else n.mesh.visible = false; }
 
     // player

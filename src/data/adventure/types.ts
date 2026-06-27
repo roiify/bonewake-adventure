@@ -95,12 +95,26 @@ export interface Sign {
   dialogueId: string;
 }
 
+// A procedurally-generated dungeon floor (see dungeons.ts). Drives a fixed
+// enemy "wave" the engine spawns on entry; clear it to reveal the stairs down.
+export interface DungeonMeta {
+  id: string;
+  floor: number;
+  enemies: string[];
+  count: number;
+  level: number;
+  boss: boolean;
+  descend: { x: number; y: number };
+  exit: { x: number; y: number };
+}
+
 export interface AdventureMap {
   id: string;
   name: string;
   w: number;
   h: number;
   tile: number;
+  dungeon?: DungeonMeta;      // present on generated dungeon floors
   ground: number[];          // row-major floor variant ids (cosmetic)
   solid: number[];           // row-major collision: 1 = blocked
   spawn: { x: number; y: number; facing: Dir };

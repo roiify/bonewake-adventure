@@ -6,6 +6,8 @@ import { DIALOGUE } from '../data/adventure/dialogue';
 import DialogueBox from '../components/adventure/DialogueBox';
 import { useAdventure, type PartyMember } from '../store/adventure';
 import { HEROES, heroStats, rollGear, gearScore, xpForLevel, HERO_MAX_LEVEL } from '../data/adventure/units';
+import { DUNGEONS, DUNGEON_BY_ID, genFloor } from '../data/adventure/dungeons';
+import { RUNTIME_MAPS } from '../data/adventure/runtime';
 import HeroPortrait from '../components/adventure/HeroPortrait';
 
 // Hero strength knobs — player hits PLAYER_POWER× harder, PLAYER_HP_MULT× tankier.
@@ -26,6 +28,7 @@ export default function AdventurePage() {
   const [showPicker, setShowPicker] = useState(false);
   const [lvl, setLvl] = useState<{ level: number; exp: number; need: number }>({ level: 1, exp: 0, need: 40 });
   const [banner, setBanner] = useState<string | null>(null);
+  const [showDungeons, setShowDungeons] = useState(false);
 
   const showToast = (m: string) => { setToast(m); window.setTimeout(() => setToast(null), 1900); };
 
@@ -115,7 +118,34 @@ export default function AdventurePage() {
       window.setTimeout(() => setBanner(null), 5000);
     }
   };
-  const onDeath = () => { showToast('You fell. You wake at the last shrine.'); window.setTimeout(() => respawnRef.current?.(), 900); };
+  // --- dungeon flow ---
+  const enterDungeon = (id: string) => {
+    const d = DUNGEON_BY_ID[id]; if (!d) return;
+    const m = genFloor(d, 1); RUNTIME_MAPS[m.id] = m;
+    useAdventure.getState().patch({ dungeon: { id, floor: 1 }, mapId: m.id, px: -1, py: -1, facing: 'north' });
+    setShowDungeons(false);
+    engineRef.current?.loadMap(m.id, -1, -1, 'north');
+    showToast(`Entering ${d.name} — Floor 1`);
+  };
+  const onExitTown = () => {
+    useAdventure.getState().patch({ dungeon: null, mapId: 'lastlight', px: -1, py: -1, facing: 'south' });
+    engineRef.current?.loadMap('lastlight', -1, -1, 'south');
+  };
+  const onDescend = () => {
+    const adv = useAdventure.getState(); const cur = adv.save.dungeon; if (!cur) return;
+    const d = DUNGEON_BY_ID[cur.id]; if (!d) return;
+    const floor = cur.floor + 1; const m = genFloor(d, floor); RUNTIME_MAPS[m.id] = m;
+    const dd = { ...adv.save.dungeonDepth, [cur.id]: Math.max(adv.save.dungeonDepth[cur.id] ?? 0, floor) };
+    adv.patch({ dungeon: { id: cur.id, floor }, mapId: m.id, px: -1, py: -1, facing: 'north', depth: Math.max(adv.save.depth, floor), dungeonDepth: dd });
+    engineRef.current?.loadMap(m.id, -1, -1, 'north');
+    showToast(`Descending — Floor ${floor}`);
+  };
+  const onFloorClearedCb = () => { setBanner('FLOOR CLEARED — green stairs lead down; the red portal returns to town.'); window.setTimeout(() => setBanner(null), 4500); };
+  const onDeath = () => {
+    const inDungeon = !!useAdventure.getState().save.dungeon;
+    showToast(inDungeon ? 'You fell. Dragged back to Lastlight…' : 'You fell. You wake at the last shrine.');
+    window.setTimeout(() => { if (useAdventure.getState().save.dungeon) onExitTown(); else respawnRef.current?.(); }, 900);
+  };
 
   const closeDialogue = () => {
     const cur = dialogue;
@@ -148,6 +178,8 @@ export default function AdventurePage() {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const adv = useAdventure.getState();
+      // regenerate the current dungeon floor after a reload (runtime maps aren't persisted)
+      if (adv.save.dungeon && !RUNTIME_MAPS[adv.save.mapId]) { const dd = DUNGEON_BY_ID[adv.save.dungeon.id]; if (dd) { const fm = genFloor(dd, adv.save.dungeon.floor); RUNTIME_MAPS[fm.id] = fm; } }
       const leader = adv.save.party[0];
       leaderRef.current = leader.heroId;
       const stats = statsFor(leader);
@@ -161,7 +193,7 @@ export default function AdventurePage() {
       engineRef.current?.destroy();
       const engine = new AdventureEngine(canvas, {
         mapId, x: px, y: py, facing, player: stats, allies: allyStats(adv.save.party), flags: adv.save.flags, defeated: adv.save.defeated,
-        cb: { onDialogue, onShrine, onAutosave, onHud, onXp, onDeath, onFlag, onLoot },
+        cb: { onDialogue, onShrine, onAutosave, onHud, onXp, onDeath, onFlag, onLoot, onFloorCleared: onFloorClearedCb, onDescend, onExitTown },
       });
       engineRef.current = engine;
       engine.start();
@@ -183,7 +215,7 @@ export default function AdventurePage() {
       className="flex items-center justify-center w-14 h-14 rounded-xl bg-zinc-800/90 text-zinc-200 text-xl active:bg-zinc-700 border border-zinc-700 select-none touch-none">{label}</button>
   );
 
-  const mapName = ADVENTURE_MAPS[hud.map]?.name ?? '';
+  const mapName = ADVENTURE_MAPS[hud.map]?.name ?? RUNTIME_MAPS[hud.map]?.name ?? '';
   const hpFrac = Math.max(0, Math.min(1, hud.hp / (hud.maxHp || 1)));
 
   return (
@@ -201,6 +233,10 @@ export default function AdventurePage() {
         </div>
         <button type="button" onClick={openPicker}
           className="shrink-0 px-2 py-1 rounded-lg bg-zinc-800 text-zinc-200 text-[11px] border border-zinc-700 active:bg-zinc-700">⇄ Hero</button>
+        {hud.map === 'lastlight' && (
+          <button type="button" onClick={() => { engineRef.current?.pause(); setShowDungeons(true); }}
+            className="shrink-0 px-2 py-1 rounded-lg bg-red-900/60 text-zinc-100 text-[11px] border border-red-800 active:bg-red-800">⚔ Dungeons</button>
+        )}
       </div>
 
       {/* level + XP bar */}
@@ -253,6 +289,36 @@ export default function AdventurePage() {
               })}
             </div>
             <p className="text-zinc-600 text-[10px] mt-3 text-center">Pick who you control. Recruit more heroes by talking to allies (Luna in Lastlight, Elara at the dungeon mouth).</p>
+          </div>
+        </div>
+      )}
+
+      {/* dungeon board */}
+      {showDungeons && (
+        <div className="absolute inset-0 z-40 bg-black/70 flex items-center justify-center p-4" onClick={() => { setShowDungeons(false); engineRef.current?.resume(); }}>
+          <div className="w-full max-w-[460px] rounded-xl border border-red-900/50 bg-zinc-950 p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm uppercase tracking-widest text-red-400/90">Dungeons</h2>
+              <button type="button" onClick={() => { setShowDungeons(false); engineRef.current?.resume(); }} className="text-zinc-500 text-lg leading-none px-1">✕</button>
+            </div>
+            <div className="space-y-2">
+              {DUNGEONS.map((d) => {
+                const best = useAdventure.getState().save.dungeonDepth[d.id] ?? 0;
+                const tough = d.baseLevel > lvl.level + 3;
+                return (
+                  <button key={d.id} type="button" onClick={() => enterDungeon(d.id)}
+                    className="w-full text-left p-3 rounded-lg border border-zinc-700 bg-zinc-900 active:bg-zinc-800 hover:border-red-600">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-100 text-sm font-semibold">{d.name}</span>
+                      <span className={`text-[10px] ${tough ? 'text-red-400' : 'text-emerald-400'}`}>Lv {d.baseLevel}+{tough ? ' ⚠ tough' : ''}</span>
+                    </div>
+                    <div className="text-zinc-500 text-[11px] mt-0.5">{d.blurb}</div>
+                    <div className="text-zinc-600 text-[10px] mt-1">Deepest reached: Floor {best}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-zinc-600 text-[10px] mt-3 text-center">Clear every enemy on a floor to reveal the stairs down. The red portal returns to town — swap to an easier dungeon to grind levels first.</p>
           </div>
         </div>
       )}
