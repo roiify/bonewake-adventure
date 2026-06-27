@@ -94,7 +94,6 @@ export class AdventureEngine {
   private renderer: THREE.WebGLRenderer; private scene: THREE.Scene; private cam: THREE.PerspectiveCamera;
   private staticGroup = new THREE.Group();
   private quad = new THREE.PlaneGeometry(1, 1);
-  private slab = this.makeSlab(10, 0.34); // extruded sprite: stacked layers w/ depth = pseudo-3D volume
   private sphere = new THREE.SphereGeometry(0.16, 8, 6);
   private gem = new THREE.OctahedronGeometry(0.26);
   private sprites = new Map<string, SpriteEntry>();
@@ -130,7 +129,7 @@ export class AdventureEngine {
     const key = new THREE.DirectionalLight(0xffe6c8, 0.9); key.position.set(6, 14, 4); this.scene.add(key);
     const rim = new THREE.DirectionalLight(0xc0392b, 0.35); rim.position.set(-6, 5, -8); this.scene.add(rim);
     this.scene.add(this.staticGroup);
-    this.playerMesh = new THREE.Mesh(this.slab, new THREE.MeshBasicMaterial({ transparent: true }));
+    this.playerMesh = new THREE.Mesh(this.quad, new THREE.MeshBasicMaterial({ transparent: true }));
     this.scene.add(this.playerMesh);
 
     this.setMap(init.mapId, init.x, init.y, init.facing);
@@ -404,7 +403,7 @@ export class AdventureEngine {
   // ---------------- sprites (cropped, size-normalized textures) ----------------
   private getSprite(path: string): SpriteEntry {
     let e = this.sprites.get(path); if (e) return e;
-    const mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true });
+    const mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
     e = { mat, aspect: 0.6, ready: false }; this.sprites.set(path, e);
     const setup = (img: HTMLImageElement, entry: SpriteEntry) => {
       const tr = getTrim(img); const tex = new THREE.Texture(img);
@@ -428,25 +427,6 @@ export class AdventureEngine {
   private getMesh(pool: THREE.Mesh[], i: number, geo: THREE.BufferGeometry, mat: THREE.Material): THREE.Mesh {
     if (!pool[i]) { const m = new THREE.Mesh(geo, mat); m.visible = false; this.scene.add(m); pool[i] = m; }
     return pool[i];
-  }
-  // A stack of N sprite quads spaced along depth (Z), shaded darker toward the
-  // back — extrudes a flat sprite into a 3D-looking slab (Smack-Studio style).
-  private makeSlab(layers: number, depth: number): THREE.BufferGeometry {
-    const pos: number[] = [], uv: number[] = [], col: number[] = [], idx: number[] = [];
-    for (let i = 0; i < layers; i++) {
-      const f = layers === 1 ? 1 : i / (layers - 1); // 0 = back, 1 = front (toward camera)
-      const z = (f - 0.5) * depth, sh = 0.5 + 0.5 * f, b = pos.length / 3;
-      pos.push(-0.5, -0.5, z, 0.5, -0.5, z, 0.5, 0.5, z, -0.5, 0.5, z);
-      uv.push(0, 0, 1, 0, 1, 1, 0, 1);
-      for (let k = 0; k < 4; k++) col.push(sh, sh, sh);
-      idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    g.setIndex(idx);
-    return g;
   }
 
   // ---------------- static scene build ----------------
@@ -496,7 +476,7 @@ export class AdventureEngine {
     for (const sg of this.map.signs ?? []) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.15), new THREE.MeshStandardMaterial({ color: 0x6b513a, roughness: 1 })); m.position.set(sg.x + 0.5, 0.5, sg.y + 0.5); this.staticGroup.add(m); }
     for (const pk of this.map.pickups ?? []) { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0xbfe6ff, emissive: 0x7fbfff, emissiveIntensity: 0.8 })); m.position.set(pk.x + 0.5, 0.6, pk.y + 0.5); this.staticGroup.add(m); this.pickupMarks.push({ mesh: m, setsFlag: pk.setsFlag, req: pk.requiresFlag }); }
     // NPCs as billboards
-    for (const n of this.map.npcs ?? []) { const mesh = new THREE.Mesh(this.slab, new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true })); this.scene.add(mesh); this.npcMeshes.push({ mesh, npc: n }); }
+    for (const n of this.map.npcs ?? []) { const mesh = new THREE.Mesh(this.quad, new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })); this.scene.add(mesh); this.npcMeshes.push({ mesh, npc: n }); }
     // dungeon portals: exit-to-town (red, always) + stairs-down (green, after clear)
     if (this.map.dungeon) {
       const dm = this.map.dungeon;
@@ -526,7 +506,7 @@ export class AdventureEngine {
     let i = 0;
     for (const e of this.enemies) {
       const h = e.isBoss ? HERO_H * 1.35 : HERO_H;
-      const m = this.getMesh(this.enemyMeshes, i, this.slab, this.blankMat); this.billboard(m, e.sprite, e.facing, true, e.x, e.y, h);
+      const m = this.getMesh(this.enemyMeshes, i, this.quad, this.blankMat); this.billboard(m, e.sprite, e.facing, true, e.x, e.y, h);
       const bg = this.getMesh(this.hpBg, i, this.quad, this.hpBgMat);
       const fill = this.getMesh(this.hpFill, i, this.quad, this.hpFillMat); fill.material = e.isBoss ? this.hpFillBossMat : this.hpFillMat;
       const bw = e.isBoss ? 1.4 : 0.9, frac = clamp(e.hp / e.maxHp, 0, 1), by = h + 0.25;
@@ -537,7 +517,7 @@ export class AdventureEngine {
     for (let k = i; k < this.enemyMeshes.length; k++) { this.enemyMeshes[k].visible = false; if (this.hpBg[k]) this.hpBg[k].visible = false; if (this.hpFill[k]) this.hpFill[k].visible = false; }
 
     // allies
-    let ai = 0; for (const a of this.allies) { const m = this.getMesh(this.allyMeshes, ai, this.slab, this.blankMat); this.billboard(m, a.templateId, a.facing, false, a.x, a.y, HERO_H); ai++; }
+    let ai = 0; for (const a of this.allies) { const m = this.getMesh(this.allyMeshes, ai, this.quad, this.blankMat); this.billboard(m, a.templateId, a.facing, false, a.x, a.y, HERO_H); ai++; }
     for (let k = ai; k < this.allyMeshes.length; k++) this.allyMeshes[k].visible = false;
 
     // projectiles
