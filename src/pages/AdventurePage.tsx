@@ -32,6 +32,8 @@ export default function AdventurePage() {
   const [showDungeons, setShowDungeons] = useState(false);
   const [showMercs, setShowMercs] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
+  const [showPause, setShowPause] = useState(false);
+  const [pauseView, setPauseView] = useState<'main' | 'options'>('main');
   const [panel, setPanel] = useState<PanelMode | null>(null);
   const gold = useAdventure((s) => s.save.gold);
 
@@ -249,6 +251,22 @@ export default function AdventurePage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Esc = pause menu (or close whatever overlay is open)
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      if (showPause) { setShowPause(false); engineRef.current?.resume(); return; }
+      if (panel || showPicker || showDungeons || showMercs || showSheet) {
+        setPanel(null); setShowPicker(false); setShowDungeons(false); setShowMercs(false); setShowSheet(false);
+        engineRef.current?.resume(); return;
+      }
+      engineRef.current?.pause(); setPauseView('main'); setShowPause(true);
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [panel, showPicker, showDungeons, showMercs, showSheet, showPause]);
+
   // --- touch controls ---
   const move = (dx: number, dy: number) => (e: React.PointerEvent) => { e.preventDefault(); engineRef.current?.setVirtualDir(dx, dy); };
   const stop = (e: React.PointerEvent) => { e.preventDefault(); engineRef.current?.setVirtualDir(0, 0); };
@@ -424,6 +442,38 @@ export default function AdventurePage() {
         );
       })()}
 
+      {/* pause menu (Esc) */}
+      {showPause && (
+        <div className="absolute inset-0 z-[60] bg-black/85 flex items-center justify-center p-4" onClick={() => { setShowPause(false); engineRef.current?.resume(); }}>
+          <div className="w-full max-w-[300px] rounded-xl border border-red-900/50 bg-zinc-950 p-5" onClick={(e) => e.stopPropagation()}>
+            {pauseView === 'main' ? (
+              <>
+                <h2 className="text-center text-lg font-bold tracking-[0.3em] uppercase text-red-400 mb-4">Paused</h2>
+                <div className="space-y-2">
+                  <button type="button" onClick={() => { setShowPause(false); engineRef.current?.resume(); }} className="w-full py-2.5 rounded-lg bg-red-800 hover:bg-red-700 text-white text-sm font-semibold border border-red-700">▶ Resume</button>
+                  <button type="button" onClick={() => { setShowPause(false); openSheet(); }} className="w-full py-2 rounded-lg bg-zinc-800 text-zinc-200 text-sm border border-zinc-700 active:bg-zinc-700">🧍 Character</button>
+                  <button type="button" onClick={() => { setShowPause(false); openPanel('inv'); }} className="w-full py-2 rounded-lg bg-zinc-800 text-zinc-200 text-sm border border-zinc-700 active:bg-zinc-700">🎒 Inventory</button>
+                  <button type="button" onClick={() => setPauseView('options')} className="w-full py-2 rounded-lg bg-zinc-800 text-zinc-200 text-sm border border-zinc-700 active:bg-zinc-700">⚙ Options</button>
+                  <button type="button" onClick={() => { setShowPause(false); useAdventure.getState().exitToSelect(); }} className="w-full py-2 rounded-lg bg-zinc-900 text-zinc-400 text-sm border border-zinc-800 active:bg-zinc-800">‹ Exit to Characters</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm uppercase tracking-widest text-red-400/90">Options</h2>
+                  <button type="button" onClick={() => setPauseView('main')} className="text-zinc-500 text-xs">‹ Back</button>
+                </div>
+                <button type="button" onClick={() => { setShowPause(false); openPanel('filter'); }} className="w-full mb-3 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-sm border border-zinc-700 active:bg-zinc-700">🔎 Loot Filter</button>
+                <div className="text-[10px] text-zinc-500 leading-relaxed">
+                  <div className="text-zinc-400 mb-1 uppercase tracking-widest text-[9px]">Controls</div>
+                  WASD / Arrows — move<br />J (hold) — attack · Space/Shift — dodge<br />E — talk / interact<br />I — inventory · P — character<br />Esc — pause
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* character sheet (P) */}
       {showSheet && (() => {
         const m = useAdventure.getState().save.party[0];
@@ -479,7 +529,7 @@ export default function AdventurePage() {
 
       {/* controls */}
       <div className="px-4 pb-6 pt-2">
-        <p className="text-center text-[11px] text-zinc-600 mb-3">WASD/arrows move · <span className="text-zinc-400">J</span> attack (hold) · <span className="text-zinc-400">Space/Shift</span> dodge · <span className="text-zinc-400">E</span> talk</p>
+        <p className="text-center text-[11px] text-zinc-600 mb-3">WASD move · <span className="text-zinc-400">J</span> attack · <span className="text-zinc-400">Space</span> dodge · <span className="text-zinc-400">E</span> talk · <span className="text-zinc-400">I</span> bag · <span className="text-zinc-400">P</span> stats · <span className="text-zinc-400">Esc</span> pause</p>
         <div className="flex items-end justify-between max-w-[340px] mx-auto">
           <div className="grid grid-cols-3 grid-rows-3 gap-1.5">
             <div />{padBtn(0, -1, '▲')}<div />
