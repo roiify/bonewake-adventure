@@ -25,7 +25,7 @@ export interface AdvSave {
 const KEY = 'bonewake_adventure_save';
 
 function fresh(): AdvSave {
-  return { mapId: 'lastlight', px: -1, py: -1, facing: 'south', party: [{ heroId: 'kengo', level: 1, exp: 0, gear: [] }], flags: {}, defeated: [], cureProgress: 0 };
+  return { mapId: 'lastlight', px: -1, py: -1, facing: 'south', party: [{ heroId: 'reiji', level: 1, exp: 0, gear: [] }], flags: {}, defeated: [], cureProgress: 0 };
 }
 
 function read(): AdvSave {

@@ -27,6 +27,7 @@ export interface GearPiece { slot: string; name: string; atk: number; hp: number
 
 // Playable heroes (party). Stats are action-tuned (not the gacha bags).
 export const HEROES: Record<string, HeroDef> = {
+  reiji: { id: 'reiji', name: 'Reiji', role: 'Ronin', element: 'dark', ranged: false, base: { hp: 1180, atk: 180, def: 82, spd: 92, crit: 0.20 } },
   kengo: { id: 'kengo', name: 'Kengo', role: 'Pit Fighter', element: 'earth', ranged: false, base: { hp: 1300, atk: 160, def: 95, spd: 72, crit: 0.10 } },
   luna: { id: 'luna', name: 'Luna', role: 'Bloodmage', element: 'light', ranged: true, base: { hp: 1050, atk: 145, def: 70, spd: 82, crit: 0.08 } },
   elara: { id: 'elara', name: 'Elara', role: 'Plague Archer', element: 'earth', ranged: true, base: { hp: 920, atk: 180, def: 58, spd: 96, crit: 0.22 } },

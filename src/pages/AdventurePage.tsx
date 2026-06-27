@@ -18,7 +18,7 @@ export default function AdventurePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<AdventureEngine | null>(null);
   const respawnRef = useRef<(() => void) | null>(null);
-  const leaderRef = useRef<string>('kengo'); // heroId of the controlled hero
+  const leaderRef = useRef<string>('reiji'); // heroId of the controlled hero
 
   const [hud, setHud] = useState<Hud>({ map: 'lastlight', hp: 1, maxHp: 1, enemies: 0, xp: 0 });
   const [dialogue, setDialogue] = useState<{ lines: DialogueLine[]; req: DialogueRequest } | null>(null);
