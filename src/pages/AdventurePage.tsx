@@ -252,9 +252,9 @@ export default function AdventurePage() {
       <div className="flex items-center gap-2 px-3 py-1 border-b border-zinc-900 bg-zinc-950/60">
         <span className="text-amber-400 text-[11px] font-bold shrink-0">Lv {lvl.level}</span>
         <div className="flex-1 h-2 rounded bg-zinc-800 overflow-hidden border border-zinc-800">
-          <div className="h-full bg-amber-500 transition-[width] duration-150" style={{ width: `${Math.min(100, (lvl.exp / (lvl.need || 1)) * 100)}%` }} />
+          <div className="h-full bg-amber-500 transition-[width] duration-150" style={{ width: lvl.level >= 200 ? '100%' : `${Math.min(100, (lvl.exp / (lvl.need || 1)) * 100)}%` }} />
         </div>
-        <span className="font-mono text-[9px] text-zinc-500 shrink-0">XP {lvl.exp}/{lvl.need}</span>
+        <span className="font-mono text-[9px] text-zinc-500 shrink-0">{lvl.level >= 200 ? 'MAX' : `XP ${lvl.exp}/${lvl.need}`}</span>
       </div>
 
       {/* canvas */}
