@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { asset } from '../assetPath';
 import { loadImage, getTrim } from './sprites';
-import { ENEMIES, statsAtLevel, rollRarity, RARITY, type Element } from '../../data/adventure/units';
+import { ENEMIES, HEROES, statsAtLevel, rollRarity, RARITY, type Element } from '../../data/adventure/units';
 import type { AdventureMap, Dir, NPC, EncounterZone, DungeonMeta } from '../../data/adventure/types';
 import { ADVENTURE_MAPS } from '../../data/adventure/maps';
 import { RUNTIME_MAPS } from '../../data/adventure/runtime';
@@ -59,7 +59,7 @@ function hit(att: { atk: number; crit: number; element: Element }, def: { def: n
 function dirFromAngle(ang: number): Dir { const c = Math.cos(ang), s = Math.sin(ang); if (Math.abs(c) >= Math.abs(s)) return c >= 0 ? 'east' : 'west'; return s >= 0 ? 'south' : 'north'; }
 
 interface Enemy { id: string; templateId: string; sprite: string; level: number; x: number; y: number; hp: number; maxHp: number; atk: number; def: number; spd: number; crit: number; element: Element; speed: number; atkCd: number; flash: number; facing: Dir; ranged: boolean; isBoss: boolean; packId?: string; setsFlag?: string; wallSide: number; }
-interface Ally { templateId: string; x: number; y: number; atk: number; def: number; crit: number; element: Element; power: number; ranged: boolean; speed: number; atkCd: number; facing: Dir; }
+interface Ally { templateId: string; x: number; y: number; atk: number; def: number; crit: number; element: Element; power: number; ranged: boolean; speed: number; atkCd: number; facing: Dir; moving: boolean; }
 interface Projectile { x: number; y: number; vx: number; vy: number; life: number; dmg: number; crit: boolean; fromEnemy: boolean; }
 interface Orb { x: number; y: number; vx: number; vy: number; life: number; }
 interface LootDrop { x: number; y: number; itemLevel: number; rarity: number; life: number; }
@@ -85,7 +85,7 @@ export class AdventureEngine {
   private keys = new Set<string>(); private vdir: [number, number] = [0, 0]; private pointerDown = false;
   private attackCd = 0; private attackAnim = 0; private attackHeld = false;
   private invuln = 0; private dashTime = 0; private dashVX = 0; private dashVY = 0; private dashCd = 0;
-  private xp = 0;
+  private xp = 0; private playerMoving = false; private animClock = 0;
   private enemies: Enemy[] = []; private allies: Ally[] = []; private allyRoster: PlayerStats[] = [];
   private projs: Projectile[] = []; private orbs: Orb[] = []; private drops: LootDrop[] = [];
   private activatedPacks = new Set<string>(); private spawnTimers = new Map<EncounterZone, number>();
@@ -227,7 +227,7 @@ export class AdventureEngine {
   private spawnAllies(): void {
     this.allies = this.allyRoster.map((p, i) => {
       const a = ((i + 1) / (this.allyRoster.length + 1)) * Math.PI * 2;
-      return { templateId: p.templateId, x: this.px + Math.cos(a) * this.tile * 1.3, y: this.py + Math.sin(a) * this.tile * 1.3, atk: p.atk, def: p.def, crit: p.crit, element: p.element, power: p.power, ranged: p.ranged, speed: 116, atkCd: 0, facing: 'south' };
+      return { templateId: p.templateId, x: this.px + Math.cos(a) * this.tile * 1.3, y: this.py + Math.sin(a) * this.tile * 1.3, atk: p.atk, def: p.def, crit: p.crit, element: p.element, power: p.power, ranged: p.ranged, speed: 116, atkCd: 0, facing: 'south', moving: false };
     });
   }
   private solidPx(wx: number, wy: number): boolean {
@@ -321,11 +321,11 @@ export class AdventureEngine {
   // ---------------- loop / update (sim) ----------------
   private loop = (now: number): void => { if (!this.running) return; const dt = Math.min(50, now - this.last); this.last = now; if (!this.paused) this.update(dt); this.render(); this.raf = requestAnimationFrame(this.loop); };
   private update(dt: number): void {
-    const s = dt / 1000; if (this.dashCd > 0) this.dashCd -= dt; if (this.invuln > 0) this.invuln -= dt; const r = 10;
-    if (this.dashTime > 0) { this.dashTime -= dt; const ds = 360; const nx = this.px + this.dashVX * ds * s; if (this.canBe(nx, this.py, r)) this.px = nx; const ny = this.py + this.dashVY * ds * s; if (this.canBe(this.px, ny, r)) this.py = ny; }
+    const s = dt / 1000; this.animClock += dt; if (this.dashCd > 0) this.dashCd -= dt; if (this.invuln > 0) this.invuln -= dt; const r = 10;
+    if (this.dashTime > 0) { this.dashTime -= dt; const ds = 360; const nx = this.px + this.dashVX * ds * s; if (this.canBe(nx, this.py, r)) this.px = nx; const ny = this.py + this.dashVY * ds * s; if (this.canBe(this.px, ny, r)) this.py = ny; this.playerMoving = true; }
     else {
       let ix = this.vdir[0], iy = this.vdir[1]; for (const k of this.keys) { const d = DIR_KEYS[k]; if (d) { ix += d[0]; iy += d[1]; } }
-      const len = Math.hypot(ix, iy);
+      const len = Math.hypot(ix, iy); this.playerMoving = len > 0;
       if (len > 0) { ix /= len; iy /= len; const sp = 120; const nx = this.px + ix * sp * s; if (this.canBe(nx, this.py, r)) this.px = nx; const ny = this.py + iy * sp * s; if (this.canBe(this.px, ny, r)) this.py = ny; if (this.attackAnim <= 0) this.facing = dirFromAngle(Math.atan2(iy, ix)); }
     }
     if (this.attackCd > 0) this.attackCd -= dt; if (this.attackAnim > 0) this.attackAnim -= dt;
@@ -361,6 +361,7 @@ export class AdventureEngine {
       for (const e of this.enemies) { const dd = (e.x - a.x) ** 2 + (e.y - a.y) ** 2; if (dd < bd) { bd = dd; tgt = e; } }
       const goX = tgt ? tgt.x : this.px, goY = tgt ? tgt.y : this.py; const dx = goX - a.x, dy = goY - a.y, dist = Math.hypot(dx, dy) || 1; a.facing = dirFromAngle(Math.atan2(dy, dx));
       const stop = tgt ? (a.ranged ? this.tile * 4 : this.tile * 0.9) : this.tile * 1.6;
+      a.moving = dist > stop;
       if (dist > stop) { const vx = (dx / dist) * a.speed * s, vy = (dy / dist) * a.speed * s; if (this.canBe(a.x + vx, a.y, 9)) a.x += vx; if (this.canBe(a.x, a.y + vy, 9)) a.y += vy; }
       if (tgt && a.atkCd <= 0 && dist <= (a.ranged ? this.tile * 4.5 : this.tile * 1.2)) { a.atkCd = a.ranged ? 650 : 420; if (a.ranged) { const ang = Math.atan2(dy, dx), sp = 300; this.projs.push({ x: a.x, y: a.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 800, dmg: a.atk, crit: false, fromEnemy: false }); } else this.damageEnemy(tgt, a.power, a); }
     }
@@ -424,6 +425,31 @@ export class AdventureEngine {
     const e = this.getSprite(`sprites/pixellab/${folder}/pro/${key}_${dir}.png`);
     mesh.material = e.mat; mesh.scale.set(h * e.aspect, h, 1);
     mesh.position.set(px / this.tile, h / 2, py / this.tile); mesh.visible = true;
+  }
+  // Animated hero: plays the right spritesheet (idle/walk/attack) + direction row.
+  // Each mesh keeps its own per-state material/texture so frame offsets don't clash.
+  private animBillboard(mesh: THREE.Mesh, heroId: string, facing: Dir, state: 'idle' | 'walk' | 'attack', px: number, py: number): void {
+    const a = HEROES[heroId]?.anim; if (!a) { this.billboard(mesh, heroId, facing, false, px, py, HERO_H); return; }
+    let store = mesh.userData.anim as Record<string, THREE.MeshBasicMaterial> | undefined;
+    if (!store) { store = {}; mesh.userData.anim = store; }
+    let mat = store[state];
+    if (!mat) {
+      mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, vertexColors: true });
+      store[state] = mat;
+      loadImage(asset(`${a.base}/${state}.png`)).then((img) => {
+        const tex = new THREE.Texture(img); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+        tex.repeat.set(1 / a.cols, 1 / a.rows); tex.needsUpdate = true; mat!.map = tex; mat!.needsUpdate = true;
+      }).catch(() => {});
+    }
+    const row = (a.dir as Record<string, number>)[facing] ?? a.dir.south;
+    const fr = Math.floor((this.animClock / 1000) * a.fps) % a.cols;
+    if (mat.map) mat.map.offset.set(fr / a.cols, 1 - (row + 1) / a.rows);
+    mesh.material = mat; mesh.scale.set(a.h, a.h, 1);
+    mesh.position.set(px / this.tile, a.h / 2, py / this.tile); mesh.visible = true;
+  }
+  private renderHero(mesh: THREE.Mesh, heroId: string, facing: Dir, moving: boolean, attacking: boolean, px: number, py: number): void {
+    if (HEROES[heroId]?.anim) this.animBillboard(mesh, heroId, facing, attacking ? 'attack' : moving ? 'walk' : 'idle', px, py);
+    else this.billboard(mesh, heroId, facing, false, px, py, HERO_H);
   }
   private getMesh(pool: THREE.Mesh[], i: number, geo: THREE.BufferGeometry, mat: THREE.Material): THREE.Mesh {
     if (!pool[i]) { const m = new THREE.Mesh(geo, mat); m.visible = false; this.scene.add(m); pool[i] = m; }
@@ -519,7 +545,7 @@ export class AdventureEngine {
     for (const n of this.npcMeshes) { if (this.npcVisible(n.npc)) this.billboard(n.mesh, n.npc.sprite, n.npc.facing, false, n.npc.x * this.tile + this.tile / 2, n.npc.y * this.tile + this.tile / 2, HERO_H); else n.mesh.visible = false; }
 
     // player
-    this.billboard(this.playerMesh, this.player.templateId, this.facing, false, this.px, this.py, HERO_H);
+    this.renderHero(this.playerMesh, this.player.templateId, this.facing, this.playerMoving, this.attackAnim > 0, this.px, this.py);
     this.playerMesh.visible = this.invuln > 0 ? Math.floor(this.invuln / 80) % 2 === 0 : true;
 
     // enemies + hp bars
@@ -537,7 +563,7 @@ export class AdventureEngine {
     for (let k = i; k < this.enemyMeshes.length; k++) { this.enemyMeshes[k].visible = false; if (this.hpBg[k]) this.hpBg[k].visible = false; if (this.hpFill[k]) this.hpFill[k].visible = false; }
 
     // allies
-    let ai = 0; for (const a of this.allies) { const m = this.getMesh(this.allyMeshes, ai, this.slab, this.blankMat); this.billboard(m, a.templateId, a.facing, false, a.x, a.y, HERO_H); ai++; }
+    let ai = 0; for (const a of this.allies) { const m = this.getMesh(this.allyMeshes, ai, this.slab, this.blankMat); this.renderHero(m, a.templateId, a.facing, a.moving, false, a.x, a.y); ai++; }
     for (let k = ai; k < this.allyMeshes.length; k++) this.allyMeshes[k].visible = false;
 
     // projectiles

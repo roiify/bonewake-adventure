@@ -6,6 +6,17 @@ export type Element = 'fire' | 'water' | 'earth' | 'light' | 'dark';
 
 export interface BaseStats { hp: number; atk: number; def: number; spd: number; crit: number; }
 
+// Optional animated-spritesheet character (grid sheets per state). Rows = facing
+// direction, columns = animation frames. Engine plays frames by movement state.
+export interface HeroAnim {
+  base: string;          // asset folder, e.g. 'sprites/test' with idle.png/walk.png/attack.png
+  cols: number;          // frames per row
+  rows: number;          // direction rows
+  fps: number;
+  dir: { north: number; south: number; east: number; west: number }; // row index per facing
+  h: number;             // billboard height in world units (cells have padding, so bigger)
+}
+
 export interface HeroDef {
   id: string;            // sprite key (public/sprites/pixellab/heroes/pro/<id>_*.png)
   name: string;
@@ -13,6 +24,7 @@ export interface HeroDef {
   element: Element;
   ranged: boolean;
   base: BaseStats;
+  anim?: HeroAnim;       // present = animated spritesheet character
 }
 
 export interface EnemyDef {
@@ -43,6 +55,9 @@ export type GearPiece = Item;
 
 // Playable heroes (party). Stats are action-tuned (not the gacha bags).
 export const HEROES: Record<string, HeroDef> = {
+  // animated test character (8-dir spritesheets w/ sword & shield)
+  test: { id: 'test', name: 'Test', role: 'Knight', element: 'light', ranged: false, base: { hp: 1300, atk: 175, def: 95, spd: 88, crit: 0.16 },
+    anim: { base: 'sprites/test', cols: 15, rows: 8, fps: 12, dir: { north: 6, south: 2, east: 0, west: 4 }, h: 2.8 } },
   // melee
   reiji: { id: 'reiji', name: 'Reiji', role: 'Ronin', element: 'dark', ranged: false, base: { hp: 1180, atk: 180, def: 82, spd: 92, crit: 0.20 } },
   kengo: { id: 'kengo', name: 'Kengo', role: 'Pit Fighter', element: 'earth', ranged: false, base: { hp: 1300, atk: 160, def: 95, spd: 72, crit: 0.10 } },
