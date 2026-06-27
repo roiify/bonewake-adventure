@@ -353,7 +353,9 @@ export class AdventureEngine {
       if (!p.fromEnemy) {
         let tgt: Enemy | null = null, bd = Infinity;
         for (const e of this.enemies) { const d = (e.x - p.x) ** 2 + (e.y - p.y) ** 2; if (d < bd) { bd = d; tgt = e; } }
-        if (tgt) {
+        // only curve while the target is still far — close up it flies straight so
+        // it lands a hit instead of orbiting (the turn rate can't track a near target)
+        if (tgt && bd > (this.tile * 1.6) ** 2) {
           const sp = Math.hypot(p.vx, p.vy) || 1;
           const cur = Math.atan2(p.vy, p.vx);
           let diff = Math.atan2(tgt.y - p.y, tgt.x - p.x) - cur;
@@ -364,7 +366,7 @@ export class AdventureEngine {
       }
       p.x += p.vx * s; p.y += p.vy * s; p.life -= dt; if (this.solidPx(p.x, p.y)) { p.life = 0; continue; }
       if (p.fromEnemy) { if ((p.x - this.px) ** 2 + (p.y - this.py) ** 2 < 144) { this.hurtPlayer({ dmg: p.dmg, crit: p.crit, strong: false }); p.life = 0; } }
-      else { for (const e of this.enemies) { if ((p.x - e.x) ** 2 + (p.y - e.y) ** 2 < 196) { this.damageEnemy(e, this.player.power); p.life = 0; break; } } }
+      else { for (const e of this.enemies) { if ((p.x - e.x) ** 2 + (p.y - e.y) ** 2 < (this.tile * 0.6) ** 2) { this.damageEnemy(e, this.player.power); p.life = 0; break; } } }
     }
     this.projs = this.projs.filter((p) => p.life > 0);
     for (const o of this.orbs) { o.life -= dt; o.vx *= 0.9; o.vy *= 0.9; o.x += o.vx * s; o.y += o.vy * s; const dd = (o.x - this.px) ** 2 + (o.y - this.py) ** 2; if (dd < (this.tile * 1.6) ** 2) { const a = Math.atan2(this.py - o.y, this.px - o.x); o.x += Math.cos(a) * 140 * s; o.y += Math.sin(a) * 140 * s; } if (dd < 100) o.life = 0; }
