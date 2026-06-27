@@ -12,8 +12,10 @@ import type { CombatUnit, Element } from '../../types';
 import type { AdventureMap, Dir, NPC, EncounterZone } from '../../data/adventure/types';
 import { ADVENTURE_MAPS } from '../../data/adventure/maps';
 
-const VIEW_W = 15;
-const VIEW_H = 11;
+// Zoomed-in, character-focused camera (more 3rd-person feel) — fewer tiles
+// visible => bigger sprites.
+const VIEW_W = 11;
+const VIEW_H = 8;
 
 export interface PlayerStats {
   templateId: string;
