@@ -17,6 +17,9 @@ export const DIALOGUE: Record<string, DialogueLine[]> = {
     { who: 'Mara', text: 'One fragment. The Necromancer holds the rest. But it\'s a start — the first true one we\'ve had.' },
     { who: 'Mara', text: 'Rest. The road north opens when you\'re ready. The dead won\'t wait, and neither will we.' },
   ],
+  mercenary: [
+    { who: 'The Flesh-Broker', text: 'Need a body at your back? I keep the desperate on a short leash. Pick one — they\'ll fight at your level and grow as you do. Trade them out whenever you like.' },
+  ],
   warden: [
     { who: 'The Warden', text: 'You\'ve the look of a delver. The dead run deeper than any grave — and meaner the lower you go.' },
     { who: 'The Warden', text: 'Pick your descent. But the far gates stay barred until you\'ve proven yourself in the shallow dark.' },

@@ -23,19 +23,9 @@ export const LASTLIGHT: AdventureMap = {
   ...grid,
   spawn: { x: 9, y: 6, facing: 'south' },
   npcs: [
-    { id: 'mara', sprite: 'aelia', x: 9, y: 3, facing: 'south', dialogueId: 'mara', altDialogueId: 'mara__done', altFlag: 'have_cure_fragment' },
-    { id: 'joss', sprite: 'george', x: 7, y: 4, facing: 'south', dialogueId: 'joss', shop: true },
-    { id: 'tender', sprite: 'pyra', x: 13, y: 8, facing: 'south', dialogueId: 'tender', heal: true },
-    // The Warden — talk to choose a dungeon descent.
-    { id: 'warden', sprite: 'kengo', x: 11, y: 6, facing: 'south', dialogueId: 'warden' },
-    // Vendors — talk to open Shop / Reforge / Stash.
-    { id: 'smith', sprite: 'korvan', x: 13, y: 4, facing: 'south', dialogueId: 'smith' },
-    { id: 'keeper', sprite: 'manny', x: 7, y: 8, facing: 'south', dialogueId: 'keeper' },
-    // Luna is recruited here in town (Act I).
-    { id: 'luna', sprite: 'luna', x: 5, y: 8, facing: 'east', dialogueId: 'luna_recruit', recruits: 'luna', hideAfterFlag: 'recruited_luna' },
+    // The only town NPC — hire/swap a mercenary companion (shops/stash/etc. are top-menu buttons).
+    { id: 'mercenary', sprite: 'korvan', x: 11, y: 6, facing: 'south', dialogueId: 'mercenary' },
   ],
   shrines: [{ x: 3, y: 5 }],
-  warps: [
-    { x: 18, y: 6, toMap: 'forsaken_crossing', toX: 2, toY: 5, facing: 'east' },
-  ],
+  // No overworld door — dungeons are entered from the board / Mercenary hub.
 };

@@ -19,9 +19,6 @@ export const FORSAKEN_CROSSING: AdventureMap = {
   tile: 32,
   ...grid,
   spawn: { x: 2, y: 5, facing: 'east' },
-  npcs: [
-    { id: 'refugee', sprite: 'chino', x: 3, y: 8, facing: 'east', dialogueId: 'refugee' },
-  ],
   signs: [{ x: 10, y: 9, dialogueId: 'crossing_sign' }],
   // No ambient (infinite) spawns — repeatable combat lives in the dungeon board.
   // Only a single one-time encounter remains as a story beat.

@@ -24,10 +24,6 @@ export const OLD_BURIAL_GROUND: AdventureMap = {
   tile: 32,
   ...grid,
   spawn: { x: 2, y: 14, facing: 'east' },
-  npcs: [
-    // Elara reveals herself at the dungeon mouth (Act I optional recruit).
-    { id: 'elara', sprite: 'elara', x: 5, y: 14, facing: 'east', dialogueId: 'elara_recruit', recruits: 'elara', hideAfterFlag: 'recruited_elara' },
-  ],
   signs: [
     { x: 16, y: 12, dialogueId: 'corpse_note' },
     { x: 12, y: 2, dialogueId: 'ch2_wall' },
